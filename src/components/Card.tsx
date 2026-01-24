@@ -4,10 +4,11 @@ import type { LinkItem } from '../types';
 interface CardProps {
   item: LinkItem;
   index: number;
+  isSortMode: boolean;
   onContextMenu?: (e: React.MouseEvent) => void;
 }
 
-const Card: React.FC<CardProps> = ({ item, index, onContextMenu }) => {
+const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLAnchorElement>(null);
 
@@ -35,8 +36,11 @@ const Card: React.FC<CardProps> = ({ item, index, onContextMenu }) => {
   return (
     <a
       ref={cardRef}
-      href={item.url}
+      href={isSortMode ? undefined : item.url}
+      target={isSortMode ? undefined : "_blank"}
+      rel={isSortMode ? undefined : "noopener noreferrer"}
       onContextMenu={onContextMenu}
+      onClick={(e) => isSortMode && e.preventDefault()}
       style={{ transitionDelay: isVisible ? `${(index % 8) * 50}ms` : '0ms' }}
       className={`group relative flex items-start h-full gap-4 p-4 rounded-2xl 
         backdrop-blur-xl border border-white/40 dark:border-white/10
@@ -47,7 +51,9 @@ const Card: React.FC<CardProps> = ({ item, index, onContextMenu }) => {
         ${isVisible
           ? 'opacity-100 translate-y-0 scale-100'
           : 'opacity-0 translate-y-12 scale-95'}
-        hover:-translate-y-2 hover:scale-[1.03] hover:rotate-1
+        ${isSortMode
+          ? 'cursor-move ring-2 ring-amber-500/50 scale-[0.98]'
+          : 'hover:-translate-y-2 hover:scale-[1.03] hover:rotate-1'}
       `}
     >
       <div className="w-12 h-12 rounded-xl bg-white/40 dark:bg-slate-700/40 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300 overflow-hidden">

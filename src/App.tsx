@@ -9,7 +9,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit2, Trash2, Plus, X } from 'lucide-react';
+import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon } from 'lucide-react';
 import { serializeConstants, saveToSource, fetchRemoteData } from './utils/serialization';
 import Settings from './components/Settings';
 
@@ -131,6 +131,12 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('nav_sync_settings');
     return saved ? JSON.parse(saved) : { token: '', owner: '', repo: '', enabled: false };
   });
+
+  // Sort Mode State
+  const [isSortMode, setIsSortMode] = useState(false);
+
+  // Modal & Menu States
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Persistence & Source Sync
   useEffect(() => {
@@ -264,10 +270,10 @@ const App: React.FC = () => {
             <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
               {sections.map((section) => (
                 <section key={section.id} id={section.id} className="scroll-mt-60">
-                  <SortableWrapper id={section.id}>
+                  <SortableWrapper id={section.id} disabled={!isSortMode}>
                     <div
                       onContextMenu={(e) => onRightClick(e, 'section', section.id)}
-                      className="flex items-center justify-between mb-6 group cursor-pointer"
+                      className={`flex items-center justify-between mb-6 group ${isSortMode ? 'cursor-move' : 'cursor-pointer'}`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-3xl filter drop-shadow-md">{section.icon}</span>
@@ -288,10 +294,11 @@ const App: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">
                       <SortableContext items={section.items.map(i => i.id)} strategy={horizontalListSortingStrategy}>
                         {section.items.map((item, index) => (
-                          <SortableWrapper key={item.id} id={item.id}>
+                          <SortableWrapper key={item.id} id={item.id} disabled={!isSortMode}>
                             <Card
                               item={item}
                               index={index}
+                              isSortMode={isSortMode}
                               onContextMenu={(e) => onRightClick(e, 'card', item.id, section.id)}
                             />
                           </SortableWrapper>
@@ -315,8 +322,6 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
-
-      <ThemeToggle />
 
       {/* Context Menu */}
       {contextMenu && (
@@ -437,8 +442,46 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Settings Panel */}
-      <Settings onSettingsChange={setSyncSettings} />
+      {/* 🧈 Butter Menu: Expandable Vertical utility list */}
+      <div className="fixed bottom-8 right-8 z-[60] group">
+        {/* Expanded Stack */}
+        <div className="flex flex-col gap-4 mb-4 items-center transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) opacity-0 translate-y-10 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto">
+          {/* Sort Mode Toggle Button */}
+          <button
+            onClick={() => setIsSortMode(!isSortMode)}
+            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-100 transform scale-50 group-hover:scale-100 hover:scale-110 active:scale-95 ring-1 ring-slate-900/5 dark:ring-white/10 ${isSortMode ? 'bg-amber-500 text-white animate-pulse' : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+            title={isSortMode ? '退出排序模式' : '进入排序模式'}
+          >
+            {isSortMode ? <Unlock size={24} /> : <Lock size={24} />}
+          </button>
+
+          {/* Theme Toggle Button */}
+          <div className="transform transition-transform duration-500 delay-75 scale-50 group-hover:scale-100">
+            <ThemeToggle />
+          </div>
+        </div>
+
+        {/* Main Trigger Button (Settings) */}
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="w-14 h-14 rounded-full bg-indigo-500 text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all ring-4 ring-indigo-500/20 group-hover:rotate-90"
+          aria-label="Toggle Menu"
+        >
+          <SettingsIcon size={24} />
+        </button>
+      </div>
+
+      <Settings
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSettingsChange={setSyncSettings}
+      />
+
+      {isSortMode && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-2 rounded-full bg-amber-500 text-white font-bold shadow-lg flex items-center gap-2 animate-in slide-in-from-top-4">
+          <Unlock size={18} /> 排序模式已开启：此时可拖拽，点击跳转已禁用
+        </div>
+      )}
     </>
   );
 };

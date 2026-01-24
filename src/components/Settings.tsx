@@ -3,11 +3,12 @@ import { Settings as SettingsIcon, X, Github, Save, CheckCircle2 } from 'lucide-
 import type { SyncSettings } from '../types';
 
 interface SettingsProps {
+    isOpen: boolean;
+    onClose: () => void;
     onSettingsChange: (settings: SyncSettings) => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ onSettingsChange }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange }) => {
     const [settings, setSettings] = useState<SyncSettings>(() => {
         const saved = localStorage.getItem('nav_sync_settings');
         return saved ? JSON.parse(saved) : { token: '', owner: '', repo: '', enabled: false };
@@ -23,15 +24,6 @@ const Settings: React.FC<SettingsProps> = ({ onSettingsChange }) => {
 
     return (
         <>
-            {/* Floating Gear Button */}
-            <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-28 right-8 z-50 w-12 h-12 rounded-full bg-white dark:bg-slate-700 shadow-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:scale-110 active:scale-95 transition-all ring-1 ring-slate-900/5 dark:ring-white/10"
-                aria-label="Open Settings"
-            >
-                <SettingsIcon size={24} className={isOpen ? 'animate-spin' : ''} />
-            </button>
-
             {/* Settings Modal */}
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
@@ -41,7 +33,7 @@ const Settings: React.FC<SettingsProps> = ({ onSettingsChange }) => {
                     >
                         <div className="relative p-8">
                             <button
-                                onClick={() => setIsOpen(false)}
+                                onClick={onClose}
                                 className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors"
                             >
                                 <X size={20} />

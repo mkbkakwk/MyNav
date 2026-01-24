@@ -32,15 +32,13 @@ const ThemeToggle: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-50">
-      <button
-        className="w-16 h-16 rounded-full bg-white dark:bg-slate-700 shadow-xl flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 active:scale-95 transition-all ring-1 ring-slate-900/5 dark:ring-white/10"
-        onClick={toggleTheme}
-        aria-label="Toggle Dark Mode"
-      >
-        {isDark ? <Sun size={28} /> : <Moon size={28} />}
-      </button>
-    </div>
+    <button
+      className="w-12 h-12 rounded-full bg-white dark:bg-slate-700 shadow-xl flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 active:scale-95 transition-all ring-1 ring-slate-900/5 dark:ring-white/10"
+      onClick={toggleTheme}
+      aria-label="Toggle Dark Mode"
+    >
+      {isDark ? <Sun size={24} /> : <Moon size={24} />}
+    </button>
   );
 };
 
