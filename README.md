@@ -1,73 +1,85 @@
-# React + TypeScript + Vite
+# MyNav - 高颜值自部署极简导航页
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<!-- 建议插入项目全景封面图：![MyNav Hero](./screenshots/hero.png) -->
 
-Currently, two official plugins are available:
+![React](https://img.shields.io/badge/React-19-blue?logo=react)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-06B6D4?logo=tailwindcss)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+MyNav 是一个专为个人打造的高颜值、极简、生产力导向的导航页面。它不仅拥有精致的 UI 设计和流畅的交互，更实现了网页端修改直接同步至本地源码的创新体验。
 
-## React Compiler
+## ✨ 核心特性
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **💎 精致视觉**：
+  - 基于 TailwindCSS 4 构建，支持**高阶玻璃质感 (Glassmorphism)** 视觉风格。
+  - **深度黑暗模式**：定制级明暗切换效果，针对暗色环境深度优化。
+  - **动态壁纸感**：背景包含丝滑的浮动渐变 light-ball 动画。
 
-## Expanding the ESLint configuration
+![Light Mode](./Image/LightTheme.png)
+![Dark Mode](./Image/DarkTheme.png)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **🚀 生产力增强**：
+  - **多引擎搜索**：集成百度、谷歌、必应等多种引擎，支持自定义添加和快速切换。
+  - **搜索建议**：实时获取主流引擎的搜索关键词补全。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
+- **动态管理与同步**：
+  - **拖拽排序 (DnD)**：基于 `@dnd-kit` 实现，支持全站点的可视化拖拽布局。
+  - **全方位 CRUD**：直接在网页上增删改分类和站点卡片，无需手动编辑代码。
+  - **🔥 源码双向同步**：首创开发模式下的文件系统桥接，网页端的每一次保存都会自动更新本地的 `src/constants.ts`。
+
+![Insert New Website](./Image/InsertNewWeb.png)
+
+## 🛠️ 技术栈
+
+- **前端框架**: React 19 (Hooks)
+- **构建工具**: Vite 7
+- **样式方案**: TailwindCSS 4 (新一代引擎)
+- **图标库**: Lucide React + Emoji
+- **拖拽库**: @dnd-kit
+- **开发桥接**: 自定义 Vite 中间件实现文件系统操作
+
+## 📦 快速启动
+
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/mkbkakwk/MyNav.git
+   cd MyNav
+   ```
+
+2. **安装依赖**
+   ```bash
+   pnpm install
+   ```
+
+3. **启动开发服务器**
+   ```bash
+   pnpm run dev
+   ```
+
+4. **开始使用**
+   打开浏览器访问 `http://localhost:5173`。在页面上右键点击任何组件即可进入编辑模式。
+
+## ⚙️ 配置文件
+
+所有的初始数据和导出数据都保存在 `src/constants.ts` 中。由于内置了同步插件，你在 UI 上的修改会实时写回此文件。
+
+```typescript
+// src/constants.ts 示例
+export const SECTIONS: SectionData[] = [
   {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    id: "fav",
+    title: "常用站点",
+    icon: "⭐",
+    items: [ ... ]
+  }
+];
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🤝 贡献建议
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+欢迎通过 Issue 或 Pull Request 为 MyNav 贡献更多精美的配色方案或功能特性。
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📄 开源协议
+
+MIT
