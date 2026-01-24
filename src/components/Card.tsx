@@ -38,12 +38,12 @@ const Card: React.FC<CardProps> = ({ item, index, onContextMenu }) => {
       href={item.url}
       onContextMenu={onContextMenu}
       style={{ transitionDelay: isVisible ? `${(index % 8) * 50}ms` : '0ms' }}
-      className={`group relative flex items-start h-full gap-4 p-3 rounded-2xl 
-        backdrop-blur-md border border-white/40 dark:border-white/10
-        bg-glass-gradient dark:bg-glass-gradient-dark shadow-clay dark:shadow-clay-dark 
-        hover:shadow-clay-hover dark:hover:shadow-clay-hover 
+      className={`group relative flex items-start h-full gap-4 p-4 rounded-2xl 
+        backdrop-blur-xl border border-white/40 dark:border-white/10
+        bg-glass-gradient dark:bg-slate-900/60 shadow-clay dark:shadow-clay-dark 
+        hover:shadow-clay-hover dark:hover:shadow-indigo-500/20 
         z-10 hover:z-20 
-        transform transition-all duration-700 ease-out
+        transform transition-all duration-500 ease-out
         ${isVisible
           ? 'opacity-100 translate-y-0 scale-100'
           : 'opacity-0 translate-y-12 scale-95'}
@@ -61,7 +61,7 @@ const Card: React.FC<CardProps> = ({ item, index, onContextMenu }) => {
         <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors">
           {item.title}
         </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+        <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5 line-clamp-2 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-colors">
           {item.description}
         </p>
       </div>

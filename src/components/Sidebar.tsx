@@ -38,7 +38,7 @@ const SidebarView: React.FC<SidebarViewProps> = ({
       aria-hidden={isGhost}
     >
       <nav
-        className={`flex flex-col h-full rounded-3xl ${isGhost ? '' : 'bg-glass-gradient dark:bg-glass-gradient-dark shadow-clay dark:shadow-clay-dark backdrop-blur-md border border-white/40 dark:border-white/5'} overflow-hidden transition-all duration-500 p-3`}
+        className={`flex flex-col h-full rounded-3xl ${isGhost ? '' : 'bg-glass-gradient dark:bg-slate-900/40 shadow-clay dark:shadow-clay-dark backdrop-blur-md border border-white/40 dark:border-white/10'} overflow-hidden transition-all duration-500 p-3`}
       >
         <div
           ref={navListRef}

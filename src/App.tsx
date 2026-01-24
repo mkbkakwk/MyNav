@@ -13,9 +13,9 @@ import { Edit2, Trash2, Plus, X } from 'lucide-react';
 
 const Background: React.FC = () => (
   <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-    <div className="absolute -top-[10%] -right-[10%] w-[800px] h-[800px] bg-gradient-to-br from-blue-300/40 to-purple-300/40 rounded-full blur-[80px] dark:from-blue-900/30 dark:to-purple-900/30 animate-float mix-blend-multiply dark:mix-blend-screen"></div>
-    <div className="absolute top-[40%] -left-[10%] w-[600px] h-[600px] bg-gradient-to-tr from-pink-300/40 to-rose-300/40 rounded-full blur-[80px] dark:from-pink-900/30 dark:to-rose-900/30 animate-float-delayed mix-blend-multiply dark:mix-blend-screen"></div>
-    <div className="absolute bottom-[10%] right-[20%] w-[500px] h-[500px] bg-gradient-to-t from-cyan-300/40 to-teal-300/40 rounded-full blur-[80px] dark:from-cyan-900/30 dark:to-teal-900/30 animate-float-delayed-2 mix-blend-multiply dark:mix-blend-screen"></div>
+    <div className="absolute -top-[10%] -right-[10%] w-[800px] h-[800px] bg-gradient-to-br from-blue-300/40 to-purple-300/40 rounded-full blur-[80px] dark:from-indigo-600/20 dark:to-purple-800/20 animate-float mix-blend-multiply dark:mix-blend-screen"></div>
+    <div className="absolute top-[40%] -left-[10%] w-[600px] h-[600px] bg-gradient-to-tr from-pink-300/40 to-rose-300/40 rounded-full blur-[80px] dark:from-violet-600/20 dark:to-fuchsia-800/20 animate-float-delayed mix-blend-multiply dark:mix-blend-screen"></div>
+    <div className="absolute bottom-[10%] right-[20%] w-[500px] h-[500px] bg-gradient-to-t from-cyan-300/40 to-teal-300/40 rounded-full blur-[80px] dark:from-blue-600/20 dark:to-cyan-800/20 animate-float-delayed-2 mix-blend-multiply dark:mix-blend-screen"></div>
   </div>
 );
 

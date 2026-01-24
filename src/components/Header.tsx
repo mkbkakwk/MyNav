@@ -397,9 +397,9 @@ const Header: React.FC = () => {
 
       {/* Search Bar (kept same) */}
       <div ref={containerRef} className={`w-full max-w-2xl relative group transition-all duration-500 ${isScrolled ? 'scale-95' : ''}`}>
-        <div className={`relative flex items-center bg-white dark:bg-slate-800 transition-all duration-500 ${isFocused || isDropdownOpen ? `ring-2 ${activeRingClass} shadow-lg ${isFocused ? 'animate-breathe' : 'scale-[1.02]'}` : 'shadow-pill group-hover:scale-[1.01]'} ${isDropdownOpen ? 'rounded-t-3xl rounded-b-none' : 'rounded-full'}`}>
+        <div className={`relative flex items-center bg-white dark:bg-slate-900/80 transition-all duration-500 ${isFocused || isDropdownOpen ? `ring-2 ${activeRingClass} shadow-lg ${isFocused ? 'animate-breathe' : 'scale-[1.02]'}` : 'shadow-pill dark:shadow-pill-dark group-hover:scale-[1.01]'} ${isDropdownOpen ? 'rounded-t-3xl rounded-b-none' : 'rounded-full hover:ring-1 hover:ring-primary/30'}`}>
           <input
-            className={`w-full pl-8 pr-20 bg-transparent border-none text-lg text-slate-800 dark:text-white placeholder-slate-400 focus:ring-0 rounded-full outline-none py-5 ${isScrolled ? 'py-3' : ''}`}
+            className={`w-full pl-8 pr-20 bg-transparent border-none text-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-0 rounded-full outline-none py-5 ${isScrolled ? 'py-3' : ''}`}
             placeholder={`在 ${selectedEngineName} 中搜索...`}
             type="text"
             value={inputValue}
@@ -413,14 +413,14 @@ const Header: React.FC = () => {
               else if (e.key === 'Escape') setShowSuggestions(false);
             }}
           />
-          {inputValue && <button onClick={() => { setInputValue(''); setSuggestions([]); setShowSuggestions(false); }} className="absolute right-16 text-slate-400 hover:text-slate-600"><X size={18} /></button>}
+          {inputValue && <button onClick={() => { setInputValue(''); setSuggestions([]); setShowSuggestions(false); }} className="absolute right-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><X size={18} /></button>}
           <button onClick={() => performSearch(inputValue)} className={`absolute right-2 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all ${isScrolled ? 'scale-90' : ''} ${activeEngineObj?.color || 'bg-blue-500'}`}><Search size={24} strokeWidth={3} /></button>
         </div>
         {isDropdownOpen && (
-          <div className={`absolute top-full left-0 right-0 bg-white dark:bg-slate-800 rounded-b-3xl shadow-xl overflow-hidden border-t dark:border-slate-700/50 ${isFocused ? `ring-2 ring-t-0 ${activeRingClass} scale-[1.02] animate-breathe origin-top` : ''}`}>
+          <div className={`absolute top-full left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-b-3xl shadow-xl overflow-hidden border-t dark:border-slate-700/50 ${isFocused ? `ring-2 ring-t-0 ${activeRingClass} scale-[1.02] animate-breathe origin-top` : ''}`}>
             <ul>
               {suggestions.map((s, i) => (
-                <li key={i} onMouseDown={(e) => { e.preventDefault(); setInputValue(s); performSearch(s); }} onMouseEnter={() => setActiveSuggestionIndex(i)} className={`px-8 py-3 cursor-pointer flex items-center gap-3 transition-colors ${i === activeSuggestionIndex ? `bg-slate-100 dark:bg-slate-700 ${activeTextClass}` : 'text-slate-700 dark:text-slate-300'}`}>
+                <li key={i} onMouseDown={(e) => { e.preventDefault(); setInputValue(s); performSearch(s); }} onMouseEnter={() => setActiveSuggestionIndex(i)} className={`px-8 py-3 cursor-pointer flex items-center gap-3 transition-colors ${i === activeSuggestionIndex ? `bg-primary/10 dark:bg-primary/20 ${activeTextClass}` : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                   <Search size={16} className="opacity-50" />
                   <span dangerouslySetInnerHTML={{ __html: s.replace(new RegExp(`(${inputValue})`, 'gi'), '<b>$1</b>') }} />
                 </li>
