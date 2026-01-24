@@ -225,13 +225,6 @@ export const SECTIONS: SectionData[] = [
         "url": "https://search.chongbuluo.com/"
       },
       {
-        "id": "7",
-        "title": "财经新闻",
-        "description": "最新市场动态",
-        "icon": "💰",
-        "url": "https://wallstreetcn.com/"
-      },
-      {
         "id": "2",
         "title": "豆包 AI",
         "description": "写作、摘要、数据",
@@ -267,6 +260,13 @@ export const SECTIONS: SectionData[] = [
         "url": "https://www.nowcoder.com/"
       },
       {
+        "id": "7",
+        "title": "财经新闻",
+        "description": "最新市场动态",
+        "icon": "💰",
+        "url": "https://wallstreetcn.com/"
+      },
+      {
         "id": "8",
         "title": "LPR 查询",
         "description": "贷款市场报价利率",
@@ -280,13 +280,6 @@ export const SECTIONS: SectionData[] = [
     "title": "数字素养",
     "icon": "🎓",
     "items": [
-      {
-        "id": "d1",
-        "title": "全民数字素养",
-        "description": "提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能",
-        "icon": "📱",
-        "url": "http://chinadata.cn/"
-      },
       {
         "id": "d2",
         "title": "网络安全",
@@ -307,6 +300,13 @@ export const SECTIONS: SectionData[] = [
         "description": "基础编程知识",
         "icon": "💻",
         "url": "https://www.freecodecamp.org/chinese/"
+      },
+      {
+        "id": "d1",
+        "title": "全民数字素养",
+        "description": "提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能",
+        "icon": "📱",
+        "url": "http://chinadata.cn/"
       }
     ]
   },

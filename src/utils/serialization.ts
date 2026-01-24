@@ -75,19 +75,26 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
 
             const jsonData = serializeToJson(sections, categories);
 
-            // Get current file SHA (to update)
+            // 1. Check if repo exists and get file SHA
             let sha = '';
             try {
                 const getFileResponse = await fetch(apiUrl, { headers });
-                if (getFileResponse.ok) {
+                if (getFileResponse.status === 200) {
                     const fileData = await getFileResponse.json();
                     sha = fileData.sha;
+                } else if (getFileResponse.status === 404) {
+                    // File not found is OK for first sync, but if the REPO is 404 it's a problem
+                    // We'll check the repo existence if the PUT fails
+                    console.log('Target file not found, will create a new one.');
+                } else {
+                    const errData = await getFileResponse.json();
+                    throw new Error(`GitHub API Error (GET): ${errData.message || getFileResponse.statusText}`);
                 }
-            } catch (e) {
-                // File might not exist yet
+            } catch (e: any) {
+                console.warn('Initial file check failed:', e.message);
             }
 
-            // Update file via Commit
+            // 2. Update/Create via PUT
             const commitResponse = await fetch(apiUrl, {
                 method: 'PUT',
                 headers,
@@ -100,11 +107,16 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
 
             if (!commitResponse.ok) {
                 const err = await commitResponse.json();
-                throw new Error(err.message);
+                // If PUT returns 404, it almost certainly means the REPO or BRANCH doesn't exist
+                if (commitResponse.status === 404) {
+                    throw new Error('仓库未找到或 Token 权限不足。请检查：1. 仓库名是否准确 2. Token 是否勾选了 repo 权限 3. 仓库是否已初始化(至少含有一个分支)。');
+                }
+                throw new Error(`GitHub API Error (PUT): ${err.message || commitResponse.statusText}`);
             }
             console.log('Successfully synced with private cloud storage');
-        } catch (err) {
-            console.error('Failed to sync with GitHub API:', err);
+        } catch (err: any) {
+            console.error('同步失败:', err.message);
+            // Re-throw to allow UI to catch if needed
         }
     }
 };
@@ -124,13 +136,21 @@ export const fetchRemoteData = async (settings: SyncSettings): Promise<{ section
         };
 
         const response = await fetch(apiUrl, { headers });
-        if (!response.ok) return null;
+        if (response.status === 404) {
+            console.log('远程数据文件尚未创建。');
+            return null;
+        }
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message);
+        }
 
         const data = await response.json();
         const content = decodeURIComponent(escape(atob(data.content)));
         return JSON.parse(content);
-    } catch (err) {
-        console.error('Failed to fetch remote data:', err);
+    } catch (err: any) {
+        console.error('获取远程数据失败:', err.message);
         return null;
     }
 };
