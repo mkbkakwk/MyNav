@@ -1,13 +1,13 @@
 # MyNav - 高颜值自部署极简导航页
 
-<!-- 建议插入项目全景封面图：![MyNav Hero](./screenshots/hero.png) -->
-
 ![React](https://img.shields.io/badge/React-19-blue?logo=react)
 ![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-06B6D4?logo=tailwindcss)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 
 MyNav 是一个专为个人打造的高颜值、极简、生产力导向的导航页面。它不仅拥有精致的 UI 设计和流畅的交互，更实现了网页端修改直接同步至本地源码的创新体验。
+
+> 这个项目是纯 AI 辅助开发的，我使用了 [Stitch](https://stitch.withgoogle.com/) 和 [Antigravity](https://antigravity.google/)。整个过程非常丝滑，AI 真的可以！教程视频参考的是 B 站 UP 主 [陶渊xiao明](https://space.bilibili.com/258944527/) 的视频：[APP 从 0 → 上线发布！免费 Vibe Coding 流程：Stitch + AI Studio + Antigravity！](https://www.bilibili.com/video/BV1DaruB2ELU/)
 
 ## ✨ 核心特性
 
