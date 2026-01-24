@@ -1,0 +1,66 @@
+import React, { useRef, useEffect, useState } from 'react';
+import type { LinkItem } from '../types';
+
+interface CardProps {
+  item: LinkItem;
+  index: number;
+}
+
+const Card: React.FC<CardProps> = ({ item, index }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '50px',
+      }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <a
+      ref={cardRef}
+      href={item.url}
+      style={{ transitionDelay: isVisible ? `${(index % 8) * 50}ms` : '0ms' }}
+      className={`group relative flex items-start h-full gap-4 p-3 rounded-2xl 
+        backdrop-blur-md border border-white/40 dark:border-white/10
+        bg-glass-gradient dark:bg-glass-gradient-dark shadow-clay dark:shadow-clay-dark 
+        hover:shadow-clay-hover dark:hover:shadow-clay-hover 
+        z-10 hover:z-20 
+        transform transition-all duration-700 ease-out
+        ${isVisible
+          ? 'opacity-100 translate-y-0 scale-100'
+          : 'opacity-0 translate-y-12 scale-95'}
+        hover:-translate-y-2 hover:scale-[1.03] hover:rotate-1
+      `}
+    >
+      <div className="w-12 h-12 rounded-xl bg-white/40 dark:bg-slate-700/40 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300">
+        <span className="emoji-icon transition-transform duration-300 group-hover:rotate-6 text-2xl">{item.icon}</span>
+      </div>
+      <div>
+        <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+          {item.title}
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+          {item.description}
+        </p>
+      </div>
+    </a>
+  );
+};
+
+export default Card;
