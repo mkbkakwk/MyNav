@@ -4,9 +4,10 @@ import type { LinkItem } from '../types';
 interface CardProps {
   item: LinkItem;
   index: number;
+  onContextMenu?: (e: React.MouseEvent) => void;
 }
 
-const Card: React.FC<CardProps> = ({ item, index }) => {
+const Card: React.FC<CardProps> = ({ item, index, onContextMenu }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLAnchorElement>(null);
 
@@ -35,6 +36,7 @@ const Card: React.FC<CardProps> = ({ item, index }) => {
     <a
       ref={cardRef}
       href={item.url}
+      onContextMenu={onContextMenu}
       style={{ transitionDelay: isVisible ? `${(index % 8) * 50}ms` : '0ms' }}
       className={`group relative flex items-start h-full gap-4 p-3 rounded-2xl 
         backdrop-blur-md border border-white/40 dark:border-white/10
@@ -48,8 +50,12 @@ const Card: React.FC<CardProps> = ({ item, index }) => {
         hover:-translate-y-2 hover:scale-[1.03] hover:rotate-1
       `}
     >
-      <div className="w-12 h-12 rounded-xl bg-white/40 dark:bg-slate-700/40 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300">
-        <span className="emoji-icon transition-transform duration-300 group-hover:rotate-6 text-2xl">{item.icon}</span>
+      <div className="w-12 h-12 rounded-xl bg-white/40 dark:bg-slate-700/40 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+        {item.icon.startsWith('http') ? (
+          <img src={item.icon} alt={item.title} className="w-full h-full object-contain p-2" />
+        ) : (
+          <span className="emoji-icon transition-transform duration-300 group-hover:rotate-6 text-2xl leading-none select-none">{item.icon}</span>
+        )}
       </div>
       <div>
         <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors">

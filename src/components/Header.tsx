@@ -364,7 +364,7 @@ const Header: React.FC = () => {
 
   const onRightClick = (e: React.MouseEvent, type: 'category' | 'engine', id: string, parentId?: string) => {
     e.preventDefault();
-    setContextMenu({ visible: true, x: e.pageX, y: e.pageY, type, id, parentId });
+    setContextMenu({ visible: true, x: e.clientX, y: e.clientY, type, id, parentId });
   };
 
   return (
