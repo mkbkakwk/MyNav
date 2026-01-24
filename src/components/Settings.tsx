@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, X, Github, Save, CheckCircle2 } from 'lucide-react';
+import { X, Github, Save, CheckCircle2 } from 'lucide-react';
 import type { SyncSettings } from '../types';
 
 interface SettingsProps {
