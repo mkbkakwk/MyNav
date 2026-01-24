@@ -26,7 +26,9 @@ MyNav 是一个专为个人打造的高颜值、极简、生产力导向的导�
 - **动态管理与同步**：
   - **拖拽排序 (DnD)**：基于 `@dnd-kit` 实现，支持全站点的可视化拖拽布局。
   - **全方位 CRUD**：直接在网页上增删改分类和站点卡片，无需手动编辑代码。
-  - **🔥 源码双向同步**：首创开发模式下的文件系统桥接，网页端的每一次保存都会自动更新本地的 `src/constants.ts`。
+  - **🔥 源码/隐私双栖同步**：
+    - **本地开发**：改动自动同步至 `src/constants.ts`。
+    - **在线部署**：支持将数据存入**另一个私有仓库**的 `nav-data.json` 中，实现代码公开、数据隐私。
 
 ![Insert New Website](./Image/InsertNewWeb.png)
 
@@ -75,6 +77,28 @@ export const SECTIONS: SectionData[] = [
   }
 ];
 ```
+
+## 🔐 GitHub 隐私云同步配置
+
+为了在公开代码的同时保护你的个人收藏，我们建议采用“隐私隔离”模式：
+
+1. **生成 GitHub Token**: 在 GitHub [Personal Access Tokens](https://github.com/settings/tokens) 页面生成一个具有 `repo` 权限的 Token。
+2. **新建隐私仓库**: 建议新建一个专门存放数据的**私有仓库**（如 `my-nav-data`）。
+3. **网页端配置**:
+   - 点击网页右下角的**设置齿轮**。
+   - 输入你的 Token、GitHub 用户名以及刚才新建的**私有仓库名**。
+   - 开启“在线同步已激活”开关。
+4. **生效**: 之后你在网页上的任何修改都会自动以 commit 形式存入私有仓库的 `nav-data.json` 中，并在几分钟后自动部署更新你的在线站点。
+
+## 🚀 自动化部署说明
+
+本项目已内置 GitHub Actions 工作流。当你推送代码到 `main` 分支时，系统会自动执行：
+- 环境安装与依赖构建。
+- 静态资源打包（Build）。
+- 自动发布到该仓库名下的 GitHub Pages。
+
+> [!TIP]
+> 部署后，请确保在仓库的 **Settings -> Pages -> Build and deployment -> Source** 中选择 **GitHub Actions** 以激活自动发布。
 
 ## 🤝 贡献建议
 

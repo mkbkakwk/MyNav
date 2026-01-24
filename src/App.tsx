@@ -4,13 +4,14 @@ import Sidebar from './components/Sidebar';
 import Card from './components/Card';
 import ThemeToggle from './components/ThemeToggle';
 import { SECTIONS } from './constants';
-import type { SectionData, Category } from './types';
+import type { SectionData, SyncSettings } from './types';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Edit2, Trash2, Plus, X } from 'lucide-react';
-import { serializeConstants, saveToSource } from './utils/serialization';
+import { serializeConstants, saveToSource, fetchRemoteData } from './utils/serialization';
+import Settings from './components/Settings';
 
 
 const Background: React.FC = () => (
@@ -125,20 +126,40 @@ const App: React.FC = () => {
     x: number; y: number; type: 'section' | 'card'; id: string; parentId?: string;
   } | null>(null);
 
+  // Sync Settings State
+  const [syncSettings, setSyncSettings] = useState<SyncSettings>(() => {
+    const saved = localStorage.getItem('nav_sync_settings');
+    return saved ? JSON.parse(saved) : { token: '', owner: '', repo: '', enabled: false };
+  });
+
   // Persistence & Source Sync
   useEffect(() => {
     localStorage.setItem('nav_sections_v1', JSON.stringify(sections));
-    // Trigger window event for Sidebar sync
     window.dispatchEvent(new CustomEvent('nav_sections_updated', { detail: sections }));
 
-    // Auto-sync to constants.ts
     const categoriesJson = localStorage.getItem('nav_search_categories_v2');
     if (categoriesJson) {
       const categories = JSON.parse(categoriesJson);
       const sourceCode = serializeConstants(sections, categories);
-      saveToSource(sourceCode);
+      saveToSource(sourceCode, syncSettings, sections, categories);
     }
-  }, [sections]);
+  }, [sections, syncSettings]);
+
+  // Initial Remote Data Sync
+  useEffect(() => {
+    const initRemoteData = async () => {
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isLocal && syncSettings.enabled) {
+        const remoteData = await fetchRemoteData(syncSettings);
+        if (remoteData) {
+          setSections(remoteData.sections);
+          localStorage.setItem('nav_search_categories_v2', JSON.stringify(remoteData.categories));
+          window.dispatchEvent(new CustomEvent('nav_search_remote_synced', { detail: remoteData.categories }));
+        }
+      }
+    };
+    initRemoteData();
+  }, []); // Run once on mount
 
   // Listen for Header updates to trigger total source sync
   useEffect(() => {
@@ -147,12 +168,12 @@ const App: React.FC = () => {
       if (categoriesJson) {
         const categories = JSON.parse(categoriesJson);
         const sourceCode = serializeConstants(sections, categories);
-        saveToSource(sourceCode);
+        saveToSource(sourceCode, syncSettings, sections, categories);
       }
     };
     window.addEventListener('nav_search_updated', handleHeaderUpdate);
     return () => window.removeEventListener('nav_search_updated', handleHeaderUpdate);
-  }, [sections]);
+  }, [sections, syncSettings]);
 
   // Click outside listener for context menu
   useEffect(() => {
@@ -415,6 +436,9 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Settings Panel */}
+      <Settings onSettingsChange={setSyncSettings} />
     </>
   );
 };

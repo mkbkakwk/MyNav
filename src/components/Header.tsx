@@ -261,6 +261,17 @@ const Header: React.FC = () => {
     window.dispatchEvent(new CustomEvent('nav_search_updated', { detail: categoriesData }));
   }, [categoriesData]);
 
+  // Sync with remote data from private repo
+  useEffect(() => {
+    const handleRemoteSync = (e: any) => {
+      if (e.detail) {
+        setCategoriesData(e.detail);
+      }
+    };
+    window.addEventListener('nav_search_remote_synced', handleRemoteSync);
+    return () => window.removeEventListener('nav_search_remote_synced', handleRemoteSync);
+  }, []);
+
   // Click outside to close context menu
   useEffect(() => {
     const handleClick = () => setContextMenu(null);

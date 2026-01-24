@@ -33,5 +33,6 @@ const sourceSyncPlugin = () => ({
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/MyNav/',
   plugins: [tailwindcss(), react(), sourceSyncPlugin()],
 })

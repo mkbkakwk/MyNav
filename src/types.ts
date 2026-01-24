@@ -32,3 +32,10 @@ export interface Category {
   name: string;
   engines: SearchEngine[];
 }
+
+export interface SyncSettings {
+  token: string;
+  owner: string;
+  repo: string;
+  enabled: boolean;
+}
