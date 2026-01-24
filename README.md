@@ -7,6 +7,9 @@
 
 MyNav 是一个专为个人打造的高颜值、极简、生产力导向的导航页面。它不仅拥有精致的 UI 设计和流畅的交互，更实现了网页端修改直接同步至本地源码的创新体验。
 
+## 🌐 演示地址
+**[点击访问在线演示](https://mkbkakwk.github.io/MyNav/)**
+
 > 这个项目是纯 AI 辅助开发的，我使用了 [Stitch](https://stitch.withgoogle.com/) 和 [Antigravity](https://antigravity.google/)。整个过程非常丝滑，AI 真的可以！教程视频参考的是 B 站 UP 主 [陶渊xiao明](https://space.bilibili.com/258944527/) 的视频：[APP 从 0 → 上线发布！免费 Vibe Coding 流程：Stitch + AI Studio + Antigravity！](https://www.bilibili.com/video/BV1DaruB2ELU/)
 
 ## ✨ 核心特性
@@ -101,6 +104,9 @@ export const SECTIONS: SectionData[] = [
 > 部署后，请确保在仓库的 **Settings -> Pages -> Build and deployment -> Source** 中选择 **GitHub Actions**。选择该项后，无需点击下方的任何 `Configure` 按钮（如 Static HTML 或 Jekyll），系统会自动识别并运行项目中的 `.github/workflows/deploy.yml` 脚本。
 
 可以直接在仓库顶部的 **Actions** 标签页查看部署进度。
+
+> [!NOTE]
+> 如果你也布置了这个项目，你的访问地址通常为：`https://<你的用户名>.github.io/MyNav/`
 
 欢迎通过 Issue 或 Pull Request 为 MyNav 贡献更多精美的配色方案或功能特性。
 
