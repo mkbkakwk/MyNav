@@ -215,10 +215,39 @@ const Header: React.FC = () => {
   const activeEngineObj = activeCategory.engines.find(e => e.name === selectedEngineName) || activeCategory.engines[0];
   const isDropdownOpen = showSuggestions && suggestions.length > 0;
 
-  // Derive dynamic classes from the bg- color
-  const activeColorBase = activeEngineObj?.color.replace('bg-', '') || 'blue-500';
-  const activeRingClass = `ring-${activeColorBase}`;
-  const activeTextClass = `text-${activeColorBase}`;
+  // Reliable color mapping for Tailwind JIT (avoids dynamic string detection issues)
+  const getThemeClasses = (bgClass: string = 'bg-blue-500') => {
+    const map: Record<string, { ring: string; text: string; bg: string }> = {
+      'bg-blue-500': { ring: 'ring-blue-500', text: 'text-blue-500', bg: 'bg-blue-500' },
+      'bg-blue-600': { ring: 'ring-blue-600', text: 'text-blue-600', bg: 'bg-blue-600' },
+      'bg-blue-700': { ring: 'ring-blue-700', text: 'text-blue-700', bg: 'bg-blue-700' },
+      'bg-sky-500': { ring: 'ring-sky-500', text: 'text-sky-500', bg: 'bg-sky-500' },
+      'bg-sky-600': { ring: 'ring-sky-600', text: 'text-sky-600', bg: 'bg-sky-600' },
+      'bg-cyan-500': { ring: 'ring-cyan-500', text: 'text-cyan-500', bg: 'bg-cyan-500' },
+      'bg-cyan-600': { ring: 'ring-cyan-600', text: 'text-cyan-600', bg: 'bg-cyan-600' },
+      'bg-indigo-500': { ring: 'ring-indigo-500', text: 'text-indigo-500', bg: 'bg-indigo-500' },
+      'bg-indigo-600': { ring: 'ring-indigo-600', text: 'text-indigo-600', bg: 'bg-indigo-600' },
+      'bg-purple-600': { ring: 'ring-purple-600', text: 'text-purple-600', bg: 'bg-purple-600' },
+      'bg-red-400': { ring: 'ring-red-400', text: 'text-red-400', bg: 'bg-red-400' },
+      'bg-red-500': { ring: 'ring-red-500', text: 'text-red-500', bg: 'bg-red-500' },
+      'bg-red-600': { ring: 'ring-red-600', text: 'text-red-600', bg: 'bg-red-600' },
+      'bg-orange-500': { ring: 'ring-orange-500', text: 'text-orange-500', bg: 'bg-orange-500' },
+      'bg-orange-600': { ring: 'ring-orange-600', text: 'text-orange-600', bg: 'bg-orange-600' },
+      'bg-amber-500': { ring: 'ring-amber-500', text: 'text-amber-500', bg: 'bg-amber-500' },
+      'bg-teal-500': { ring: 'ring-teal-500', text: 'text-teal-500', bg: 'bg-teal-500' },
+      'bg-teal-600': { ring: 'ring-teal-600', text: 'text-teal-600', bg: 'bg-teal-600' },
+      'bg-emerald-600': { ring: 'ring-emerald-600', text: 'text-emerald-600', bg: 'bg-emerald-600' },
+      'bg-green-500': { ring: 'ring-green-500', text: 'text-green-500', bg: 'bg-green-500' },
+      'bg-green-600': { ring: 'ring-green-600', text: 'text-green-600', bg: 'bg-green-600' },
+      'bg-pink-500': { ring: 'ring-pink-500', text: 'text-pink-500', bg: 'bg-pink-500' },
+      'bg-slate-800': { ring: 'ring-slate-800', text: 'text-slate-800 dark:text-slate-100', bg: 'bg-slate-800' },
+    };
+    return map[bgClass] || { ring: 'ring-primary', text: 'text-primary', bg: 'bg-primary' };
+  };
+
+  const activeTheme = getThemeClasses(activeEngineObj?.color);
+  const activeRingClass = activeTheme.ring;
+  const activeTextClass = activeTheme.text;
 
   // DND Sensors
   const sensors = useSensors(
@@ -475,13 +504,13 @@ const Header: React.FC = () => {
           <SortableContext items={activeCategory.engines.map(e => e.name)} strategy={horizontalListSortingStrategy}>
             {activeCategory.engines.map(engine => {
               const itemIsSelected = selectedEngineName === engine.name;
-              const colorBase = engine.color.replace('bg-', '');
+              const engineTheme = getThemeClasses(engine.color);
               return (
                 <SortableItem key={engine.name} id={engine.name}>
                   <button
                     onClick={() => setSelectedEngineName(engine.name)}
                     onContextMenu={(e) => onRightClick(e, 'engine', engine.name, activeCategoryId)}
-                    className={`px-4 py-2 rounded-xl flex items-center gap-2 relative transition-all duration-300 ${itemIsSelected ? `bg-white dark:bg-slate-700 shadow-md ring-2 ring-${colorBase} text-${colorBase} font-bold scale-105` : 'bg-white/40 dark:bg-slate-800/40 text-slate-500 hover:bg-white dark:hover:bg-slate-700 hover:scale-105'}`}
+                    className={`px-4 py-2 rounded-xl flex items-center gap-2 relative transition-all duration-300 ${itemIsSelected ? `bg-white dark:bg-slate-700 shadow-md ring-2 ${engineTheme.ring} ${engineTheme.text} font-bold scale-105` : 'bg-white/40 dark:bg-slate-800/40 text-slate-500 hover:bg-white dark:hover:bg-slate-700 hover:scale-105'}`}
                     title="右键点击进行编辑或删除"
                   >
                     <span className={`w-2 h-2 rounded-full ${engine.color} shadow-[0_0_8px_rgba(0,0,0,0.3)] ${itemIsSelected ? 'scale-125' : ''}`}></span>

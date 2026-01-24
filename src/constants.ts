@@ -94,18 +94,6 @@ export const SEARCH_CATEGORIES: Record<string, SearchEngine[]> = {
       "color": "bg-slate-800",
       "url": "https://github.com/search?q={q}",
       "suggestionSource": "none"
-    },
-    {
-      "name": "360",
-      "color": "bg-green-500",
-      "url": "https://www.so.com/s?q={q}",
-      "suggestionSource": "360"
-    },
-    {
-      "name": "搜狗",
-      "color": "bg-orange-500",
-      "url": "https://www.sogou.com/web?query={q}",
-      "suggestionSource": "baidu"
     }
   ],
   "学术": [
