@@ -13,13 +13,6 @@
                     "url": "https://search.chongbuluo.com/"
                 },
                 {
-                    "id": "7",
-                    "title": "财经新闻",
-                    "description": "最新市场动态",
-                    "icon": "💰",
-                    "url": "https://wallstreetcn.com/"
-                },
-                {
                     "id": "2",
                     "title": "豆包 AI",
                     "description": "写作、摘要、数据",
@@ -55,6 +48,13 @@
                     "url": "https://www.nowcoder.com/"
                 },
                 {
+                    "id": "7",
+                    "title": "财经新闻",
+                    "description": "最新市场动态",
+                    "icon": "💰",
+                    "url": "https://wallstreetcn.com/"
+                },
+                {
                     "id": "8",
                     "title": "LPR 查询",
                     "description": "贷款市场报价利率",
@@ -68,13 +68,6 @@
             "title": "数字素养",
             "icon": "🎓",
             "items": [
-                {
-                    "id": "d1",
-                    "title": "全民数字素养",
-                    "description": "提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能",
-                    "icon": "📱",
-                    "url": "http://chinadata.cn/"
-                },
                 {
                     "id": "d2",
                     "title": "网络安全",
@@ -95,6 +88,13 @@
                     "description": "基础编程知识",
                     "icon": "💻",
                     "url": "https://www.freecodecamp.org/chinese/"
+                },
+                {
+                    "id": "d1",
+                    "title": "全民数字素养",
+                    "description": "提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能",
+                    "icon": "📱",
+                    "url": "http://chinadata.cn/"
                 }
             ]
         },
@@ -183,7 +183,7 @@
                 {
                     "id": "19",
                     "title": "度加创作",
-                    "description": "百度 AIGC 平台",
+                    "description": "百度 AIGC platform",
                     "icon": "🎨",
                     "url": "https://aigc.baidu.com/"
                 }
@@ -374,7 +374,7 @@
     ],
     "categories": [
         {
-            "id": "common",
+            "id": "cat-常用",
             "name": "常用",
             "engines": [
                 {
@@ -387,7 +387,7 @@
                     "name": "Yandex",
                     "url": "https://ya.ru/search?text={q}",
                     "color": "bg-indigo-600",
-                    "suggestionSource": "none"
+                    "suggestionSource": "baidu"
                 },
                 {
                     "name": "百度",
@@ -399,25 +399,25 @@
                     "name": "必应",
                     "color": "bg-teal-500",
                     "url": "https://www.bing.com/search?q={q}",
-                    "suggestionSource": "bing"
+                    "suggestionSource": "baidu"
                 },
                 {
                     "name": "GitHub",
                     "color": "bg-slate-800",
                     "url": "https://github.com/search?q={q}",
-                    "suggestionSource": "none"
+                    "suggestionSource": "baidu"
                 }
             ]
         },
         {
-            "id": "academic",
+            "id": "cat-学术",
             "name": "学术",
             "engines": [
                 {
                     "name": "谷歌学术",
                     "color": "bg-indigo-600",
                     "url": "https://scholar.google.com/scholar?q={q}",
-                    "suggestionSource": "google"
+                    "suggestionSource": "baidu"
                 },
                 {
                     "name": "百度学术",
@@ -429,24 +429,24 @@
                     "name": "Semantic",
                     "color": "bg-emerald-600",
                     "url": "https://www.semanticscholar.org/search?q={q}",
-                    "suggestionSource": "google"
+                    "suggestionSource": "baidu"
                 },
                 {
                     "name": "AMiner",
                     "color": "bg-purple-600",
                     "url": "https://www.aminer.cn/search/pub?q={q}",
-                    "suggestionSource": "none"
+                    "suggestionSource": "baidu"
                 },
                 {
                     "name": "DeepSeek",
                     "color": "bg-cyan-600",
                     "url": "https://www.deepseek.com/search?q={q}",
-                    "suggestionSource": "none"
+                    "suggestionSource": "baidu"
                 }
             ]
         },
         {
-            "id": "paper",
+            "id": "cat-文献",
             "name": "文献",
             "engines": [
                 {
@@ -471,12 +471,12 @@
                     "name": "PubMed",
                     "color": "bg-sky-600",
                     "url": "https://pubmed.ncbi.nlm.nih.gov/?term={q}",
-                    "suggestionSource": "google"
+                    "suggestionSource": "baidu"
                 }
             ]
         },
         {
-            "id": "doc",
+            "id": "cat-文档",
             "name": "文档",
             "engines": [
                 {
@@ -500,7 +500,7 @@
             ]
         },
         {
-            "id": "life",
+            "id": "cat-生活",
             "name": "生活",
             "engines": [
                 {
@@ -531,7 +531,7 @@
                     "name": "小红书",
                     "color": "bg-red-400",
                     "url": "https://www.xiaohongshu.com/search_result?keyword={q}",
-                    "suggestionSource": "none"
+                    "suggestionSource": "baidu"
                 }
             ]
         }
