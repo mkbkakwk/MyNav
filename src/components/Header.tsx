@@ -58,6 +58,19 @@ const Header: React.FC = () => {
   const activeEngineObj = currentEngines.find(e => e.name === selectedEngineName) || currentEngines[0];
   const isDropdownOpen = showSuggestions && suggestions.length > 0;
 
+  // Derive dynamic classes from the bg- color in constants
+  // e.g. "bg-blue-500" -> "ring-blue-500", "text-blue-500"
+  const activeColorBase = activeEngineObj.color.replace('bg-', '');
+  const activeRingClass = `ring-${activeColorBase}`;
+  const activeTextClass = `text-${activeColorBase}`; // For text if needed
+  // Tailwind Safelist for dynamic classes construction:
+  // ring-blue-500 text-blue-500 ring-teal-500 text-teal-500 ring-red-500 text-red-500 
+  // ring-green-500 text-green-500 ring-orange-500 text-orange-500 ring-slate-800 text-slate-800
+  // ring-indigo-600 text-indigo-600 ring-blue-600 text-blue-600 ring-cyan-600 text-cyan-600
+  // ring-emerald-600 text-emerald-600 ring-purple-600 text-purple-600 ring-blue-700 text-blue-700
+  // ring-orange-600 text-orange-600 ring-red-600 text-red-600 ring-sky-600 text-sky-600
+  // ring-green-600 text-green-600 ring-indigo-500 text-indigo-500 ring-pink-500 text-pink-500
+  // ring-red-400 text-red-400
   // Effects
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -167,10 +180,6 @@ const Header: React.FC = () => {
     }
   };
 
-  const colorBase = activeEngineObj.color.replace('bg-', '');
-  const ringColorClass = `ring-${colorBase}/50`;
-  const shadowColorClass = `shadow-${colorBase}/20`;
-
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-40 w-full px-6 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${isScrolled
@@ -204,7 +213,7 @@ const Header: React.FC = () => {
         <div
           className={`relative flex items-center bg-white dark:bg-slate-800 transition-all duration-500 ease-out 
           ${isFocused || isDropdownOpen
-              ? `ring-2 ${ringColorClass} shadow-lg ${shadowColorClass} ${isFocused ? 'animate-breathe' : 'scale-[1.02]'}`
+              ? `ring-2 ${activeRingClass} shadow-lg ${isFocused ? 'animate-breathe' : 'scale-[1.02]'}`
               : 'shadow-pill dark:shadow-pill-dark group-hover:scale-[1.01]'
             } ${isDropdownOpen ? 'rounded-t-3xl rounded-b-none' : 'rounded-full'}`}
         >
@@ -238,18 +247,16 @@ const Header: React.FC = () => {
 
           <button
             onClick={() => performSearch(inputValue)}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all active:scale-95 active:shadow-inner bg-gradient-to-br ${isScrolled ? 'scale-90' : ''
-              } ${selectedEngineName === 'GitHub'
-                ? 'from-slate-700 to-slate-900 hover:from-slate-600 hover:to-slate-800 shadow-slate-900/40'
-                : 'from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 shadow-indigo-500/40'
-              }`}>
+            className={`absolute right-2 top-1/2 -translate-y-1/2 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all active:scale-95 active:shadow-inner ${isScrolled ? 'scale-90' : ''
+              } ${activeEngineObj.color.replace('bg-', 'bg-')} shadow-indigo-500/40`}
+          >
             <Search size={24} strokeWidth={3} />
           </button>
         </div>
 
         {/* Suggestions Dropdown */}
         {isDropdownOpen && (
-          <div className={`absolute top-full left-0 right-0 bg-white dark:bg-slate-800 rounded-b-3xl shadow-xl overflow-hidden transition-all border-t border-slate-100 dark:border-slate-700/50 ${isFocused ? `ring-2 ring-t-0 ${ringColorClass} scale-[1.02] animate-breathe origin-top` : ''
+          <div className={`absolute top-full left-0 right-0 bg-white dark:bg-slate-800 rounded-b-3xl shadow-xl overflow-hidden transition-all border-t border-slate-100 dark:border-slate-700/50 ${isFocused ? `ring-2 ring-t-0 ${activeRingClass} scale-[1.02] animate-breathe origin-top` : ''
             }`}>
             <ul>
               {suggestions.map((suggestion, index) => (
@@ -262,11 +269,11 @@ const Header: React.FC = () => {
                   }}
                   onMouseEnter={() => setActiveSuggestionIndex(index)}
                   className={`px-8 py-3 cursor-pointer text-base flex items-center gap-3 transition-colors ${index === activeSuggestionIndex
-                    ? 'bg-slate-100 dark:bg-slate-700 text-primary dark:text-indigo-400'
+                    ? `bg-slate-100 dark:bg-slate-700 ${activeTextClass}`
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                     }`}
                 >
-                  <Search size={16} className={`opacity-50 ${index === activeSuggestionIndex ? 'text-primary' : ''}`} />
+                  <Search size={16} className={`opacity-50 ${index === activeSuggestionIndex ? activeTextClass : ''}`} />
                   <span dangerouslySetInnerHTML={{
                     __html: suggestion.replace(new RegExp(`(${inputValue})`, 'gi'), '<b>$1</b>')
                   }} />
@@ -282,13 +289,19 @@ const Header: React.FC = () => {
         }`}>
         {currentEngines.map((engine) => {
           const isSelected = selectedEngineName === engine.name;
+          // Derive classes from engine.color (e.g. bg-blue-500 => ring-blue-500, text-blue-600)
+          const engineColorBase = engine.color.replace('bg-', '');
+          const ringClass = `ring-${engineColorBase}`;
+          // We can try to guess a darker shade for text, or just use the same shade
+          const textClass = `text-${engineColorBase}`;
+
           return (
             <button
               key={engine.name}
               onClick={() => setSelectedEngineName(engine.name)}
               className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 duration-300 
                 ${isSelected
-                  ? 'bg-white dark:bg-slate-700 shadow-md ring-2 ring-indigo-500/30 text-indigo-600 dark:text-indigo-300 scale-105 font-bold'
+                  ? `bg-white dark:bg-slate-700 shadow-md ring-2 ${ringClass} ${textClass} scale-105 font-bold`
                   : 'bg-white/40 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:shadow-md hover:scale-105'
                 }`}
             >
