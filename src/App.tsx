@@ -273,7 +273,8 @@ const App: React.FC = () => {
                   <SortableWrapper id={section.id} disabled={!isSortMode}>
                     <div
                       onContextMenu={(e) => onRightClick(e, 'section', section.id)}
-                      className={`flex items-center justify-between mb-6 group ${isSortMode ? 'cursor-move' : 'cursor-pointer'}`}
+                      className={`flex items-center justify-between mb-6 group ${isSortMode ? 'cursor-move animate-wiggle' : 'cursor-pointer'}`}
+                      style={{ animationDelay: isSortMode ? '0.1s' : '0s' }}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-3xl filter drop-shadow-md">{section.icon}</span>

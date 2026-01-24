@@ -41,7 +41,10 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu }) =
       rel={isSortMode ? undefined : "noopener noreferrer"}
       onContextMenu={onContextMenu}
       onClick={(e) => isSortMode && e.preventDefault()}
-      style={{ transitionDelay: isVisible ? `${(index % 8) * 50}ms` : '0ms' }}
+      style={{
+        transitionDelay: isVisible ? `${(index % 8) * 50}ms` : '0ms',
+        animationDelay: isSortMode ? `${(index % 4) * 0.05}s` : '0s'
+      }}
       className={`group relative flex items-start h-full gap-4 p-4 rounded-2xl 
         backdrop-blur-xl border border-white/40 dark:border-white/10
         bg-glass-gradient dark:bg-slate-900/60 shadow-clay dark:shadow-clay-dark 
@@ -52,7 +55,7 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu }) =
           ? 'opacity-100 translate-y-0 scale-100'
           : 'opacity-0 translate-y-12 scale-95'}
         ${isSortMode
-          ? 'cursor-move ring-2 ring-amber-500/50 scale-[0.98]'
+          ? 'cursor-move ring-2 ring-amber-500/50 scale-[0.98] animate-wiggle'
           : 'hover:-translate-y-2 hover:scale-[1.03] hover:rotate-1'}
       `}
     >
