@@ -43,7 +43,8 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu }) =
       onClick={(e) => isSortMode && e.preventDefault()}
       style={{
         transitionDelay: isVisible ? `${(index % 8) * 50}ms` : '0ms',
-        animationDelay: isSortMode ? `${(index % 4) * 0.05}s` : '0s'
+        animationDelay: isSortMode ? `${(index % 7) * -0.13}s` : '0s',
+        animationDuration: isSortMode ? `${0.3 + (index % 5) * 0.04}s` : '0.35s'
       }}
       className={`group relative flex items-start h-full gap-4 p-4 rounded-2xl 
         backdrop-blur-xl border border-white/40 dark:border-white/10

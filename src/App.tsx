@@ -268,13 +268,16 @@ const App: React.FC = () => {
         <main className="flex-1 min-w-0 space-y-12">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={e => handleDragEnd(e, 'section')}>
             <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-              {sections.map((section) => (
+              {sections.map((section, index) => (
                 <section key={section.id} id={section.id} className="scroll-mt-60">
                   <SortableWrapper id={section.id} disabled={!isSortMode}>
                     <div
                       onContextMenu={(e) => onRightClick(e, 'section', section.id)}
-                      className={`flex items-center justify-between mb-6 group ${isSortMode ? 'cursor-move animate-wiggle' : 'cursor-pointer'}`}
-                      style={{ animationDelay: isSortMode ? '0.1s' : '0s' }}
+                      className={`flex items-center justify-between mb-6 group ${isSortMode ? 'cursor-move animate-wiggle-mild' : 'cursor-pointer'}`}
+                      style={{
+                        animationDelay: isSortMode ? `${(index % 3) * -0.17}s` : '0s',
+                        animationDuration: isSortMode ? `${0.4 + (index % 2) * 0.05}s` : '0.4s'
+                      }}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-3xl filter drop-shadow-md">{section.icon}</span>

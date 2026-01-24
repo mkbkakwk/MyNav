@@ -26,7 +26,8 @@
   --animate-float-delayed: float 20s infinite ease-in-out -5s;
   --animate-float-delayed-2: float 20s infinite ease-in-out -10s;
   --animate-breathe: breathe 3s infinite ease-in-out;
-  --animate-wiggle: wiggle 0.3s infinite ease-in-out;
+  --animate-wiggle: wiggle 0.35s infinite ease-in-out;
+  --animate-wiggle-mild: wiggle-mild 0.4s infinite ease-in-out;
 
   @keyframes float {
 
@@ -53,8 +54,27 @@
   }
 
   @keyframes wiggle {
-    0%, 100% { transform: rotate(-1deg); }
-    50% { transform: rotate(1deg); }
+
+    0%,
+    100% {
+      transform: rotate(-0.5deg);
+    }
+
+    50% {
+      transform: rotate(0.5deg);
+    }
+  }
+
+  @keyframes wiggle-mild {
+
+    0%,
+    100% {
+      transform: rotate(-0.25deg);
+    }
+
+    50% {
+      transform: rotate(0.25deg);
+    }
   }
 }
 
