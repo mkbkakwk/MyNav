@@ -69,13 +69,13 @@ export const SEARCH_CATEGORIES: Record<string, SearchEngine[]> = {
       "name": "谷歌",
       "color": "bg-red-500",
       "url": "https://www.google.com/search?q={q}",
-      "suggestionSource": "google"
+      "suggestionSource": "baidu"
     },
     {
       "name": "Yandex",
       "url": "https://ya.ru/search?text={q}",
       "color": "bg-indigo-600",
-      "suggestionSource": "none"
+      "suggestionSource": "baidu"
     },
     {
       "name": "百度",
@@ -87,13 +87,13 @@ export const SEARCH_CATEGORIES: Record<string, SearchEngine[]> = {
       "name": "必应",
       "color": "bg-teal-500",
       "url": "https://www.bing.com/search?q={q}",
-      "suggestionSource": "bing"
+      "suggestionSource": "baidu"
     },
     {
       "name": "GitHub",
       "color": "bg-slate-800",
       "url": "https://github.com/search?q={q}",
-      "suggestionSource": "none"
+      "suggestionSource": "baidu"
     }
   ],
   "学术": [
@@ -101,7 +101,7 @@ export const SEARCH_CATEGORIES: Record<string, SearchEngine[]> = {
       "name": "谷歌学术",
       "color": "bg-indigo-600",
       "url": "https://scholar.google.com/scholar?q={q}",
-      "suggestionSource": "google"
+      "suggestionSource": "baidu"
     },
     {
       "name": "百度学术",
@@ -113,19 +113,19 @@ export const SEARCH_CATEGORIES: Record<string, SearchEngine[]> = {
       "name": "Semantic",
       "color": "bg-emerald-600",
       "url": "https://www.semanticscholar.org/search?q={q}",
-      "suggestionSource": "google"
+      "suggestionSource": "baidu"
     },
     {
       "name": "AMiner",
       "color": "bg-purple-600",
       "url": "https://www.aminer.cn/search/pub?q={q}",
-      "suggestionSource": "none"
+      "suggestionSource": "baidu"
     },
     {
       "name": "DeepSeek",
       "color": "bg-cyan-600",
       "url": "https://www.deepseek.com/search?q={q}",
-      "suggestionSource": "none"
+      "suggestionSource": "baidu"
     }
   ],
   "文献": [
@@ -151,7 +151,7 @@ export const SEARCH_CATEGORIES: Record<string, SearchEngine[]> = {
       "name": "PubMed",
       "color": "bg-sky-600",
       "url": "https://pubmed.ncbi.nlm.nih.gov/?term={q}",
-      "suggestionSource": "google"
+      "suggestionSource": "baidu"
     }
   ],
   "文档": [
@@ -203,7 +203,7 @@ export const SEARCH_CATEGORIES: Record<string, SearchEngine[]> = {
       "name": "小红书",
       "color": "bg-red-400",
       "url": "https://www.xiaohongshu.com/search_result?keyword={q}",
-      "suggestionSource": "none"
+      "suggestionSource": "baidu"
     }
   ]
 };

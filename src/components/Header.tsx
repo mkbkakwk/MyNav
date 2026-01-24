@@ -354,7 +354,7 @@ const Header: React.FC = () => {
           if (cat.id === activeCategoryId) {
             const usedColors = new Set(cat.engines.map(e => e.color));
             const nextColor = AVAILABLE_COLORS.find(c => !usedColors.has(c)) || AVAILABLE_COLORS[0];
-            const newEngine = { name: name.trim(), url: formattedUrl, color: nextColor, suggestionSource: 'none' as const };
+            const newEngine = { name: name.trim(), url: formattedUrl, color: nextColor, suggestionSource: 'baidu' as const };
             return { ...cat, engines: [...cat.engines, newEngine] };
           }
           return cat;
@@ -428,7 +428,7 @@ const Header: React.FC = () => {
           if (source === 'none') return;
           let url = '', callbackParam = 'callback';
           if (source === 'baidu') { url = `https://sp0.baidu.com/5a1Fazu8AA54nxGko9WTAnF6hhy/su?wd=${encodeURIComponent(inputValue)}`; callbackParam = 'cb'; }
-          else if (source === 'google') { url = `https://suggestqueries.google.com/complete/search?client=youtube&q=${encodeURIComponent(inputValue)}`; callbackParam = 'jsonp'; }
+          else if (source === 'google') { url = `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(inputValue)}`; }
           else if (source === '360' || source === 'bing') { url = `https://sug.so.360.cn/suggest?word=${encodeURIComponent(inputValue)}&encodein=utf-8&encodeout=utf-8`; }
           const data = await fetchJsonp(url, callbackParam);
           const results = source === 'google' ? data[1] : data.s || [];
@@ -499,9 +499,9 @@ const Header: React.FC = () => {
           <div className={`absolute top-full left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-b-3xl shadow-xl overflow-hidden border-t dark:border-slate-700/50 ${isFocused ? `ring-2 ring-t-0 ${activeRingClass} scale-[1.02] animate-breathe origin-top` : ''}`}>
             <ul>
               {suggestions.map((s, i) => (
-                <li key={i} onMouseDown={(e) => { e.preventDefault(); setInputValue(s); performSearch(s); }} onMouseEnter={() => setActiveSuggestionIndex(i)} className={`px-8 py-3 cursor-pointer flex items-center gap-3 transition-colors ${i === activeSuggestionIndex ? `bg-primary/10 dark:bg-primary/20 ${activeTextClass}` : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                <li key={i} onMouseDown={(e) => { e.preventDefault(); setInputValue(String(s)); performSearch(String(s)); }} onMouseEnter={() => setActiveSuggestionIndex(i)} className={`px-8 py-3 cursor-pointer flex items-center gap-3 transition-colors ${i === activeSuggestionIndex ? `bg-primary/10 dark:bg-primary/20 ${activeTextClass}` : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                   <Search size={16} className="opacity-50" />
-                  <span dangerouslySetInnerHTML={{ __html: s.replace(new RegExp(`(${inputValue})`, 'gi'), '<b>$1</b>') }} />
+                  <span dangerouslySetInnerHTML={{ __html: String(s).replace(new RegExp(`(${inputValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<b>$1</b>') }} />
                 </li>
               ))}
             </ul>
