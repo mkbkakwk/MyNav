@@ -69,7 +69,7 @@ export const SEARCH_CATEGORIES: Record<string, SearchEngine[]> = {
       "name": "谷歌",
       "color": "bg-red-500",
       "url": "https://www.google.com/search?q={q}",
-      "suggestionSource": "baidu"
+      "suggestionSource": "google"
     },
     {
       "name": "Yandex",

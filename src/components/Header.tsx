@@ -5,6 +5,7 @@ import type { SearchEngine } from '../types';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Robust JSONP helper with timeout and cleanup
 const fetchJsonp = (url: string, callbackParam: string = 'callback'): Promise<any> => {
@@ -122,9 +123,19 @@ const Header: React.FC = () => {
       defaultCategoryEngines.forEach(defaultEngine => {
         const existingIndex = mergedEngines.findIndex(e => e.name === defaultEngine.name);
         if (existingIndex > -1) {
+          // Sync suggestionSource if it differs from constants (force the new default)
+          if (mergedEngines[existingIndex].suggestionSource !== defaultEngine.suggestionSource) {
+            mergedEngines[existingIndex] = {
+              ...mergedEngines[existingIndex],
+              suggestionSource: defaultEngine.suggestionSource
+            };
+          }
           // Sync URL if it's a placeholder
           if (mergedEngines[existingIndex].url === '#' || !mergedEngines[existingIndex].url) {
-            mergedEngines[existingIndex] = { ...mergedEngines[existingIndex], url: defaultEngine.url };
+            mergedEngines[existingIndex] = {
+              ...mergedEngines[existingIndex],
+              url: defaultEngine.url
+            };
           }
         } else {
           // Add missing engine from constants
@@ -427,7 +438,7 @@ const Header: React.FC = () => {
           const source = activeEngineObj?.suggestionSource || 'none';
           if (source === 'none') return;
           let url = '', callbackParam = 'callback';
-          if (source === 'baidu') { url = `https://sp0.baidu.com/5a1Fazu8AA54nxGko9WTAnF6hhy/su?wd=${encodeURIComponent(inputValue)}`; callbackParam = 'cb'; }
+          if (source === 'baidu') { url = `https://suggestion.baidu.com/su?wd=${encodeURIComponent(inputValue)}&p=3`; callbackParam = 'cb'; }
           else if (source === 'google') { url = `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(inputValue)}`; }
           else if (source === '360' || source === 'bing') { url = `https://sug.so.360.cn/suggest?word=${encodeURIComponent(inputValue)}&encodein=utf-8&encodeout=utf-8`; }
           const data = await fetchJsonp(url, callbackParam);
@@ -474,39 +485,71 @@ const Header: React.FC = () => {
         </nav>
       </DndContext>
 
-      {/* Search Bar (kept same) */}
-      <div ref={containerRef} className={`w-full max-w-2xl relative group transition-all duration-500 ${isScrolled ? 'scale-95' : ''}`}>
-        <div className={`relative flex items-center bg-white dark:bg-slate-900/80 transition-all duration-500 ${isFocused || isDropdownOpen ? `ring-2 ${activeRingClass} shadow-lg ${isFocused ? 'animate-breathe' : 'scale-[1.02]'}` : 'shadow-pill dark:shadow-pill-dark group-hover:scale-[1.01]'} ${isDropdownOpen ? 'rounded-t-3xl rounded-b-none' : 'rounded-full hover:ring-1 hover:ring-primary/30'}`}>
-          <input
-            className={`w-full pl-8 pr-20 bg-transparent border-none text-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-0 rounded-full outline-none py-5 ${isScrolled ? 'py-3' : ''}`}
-            placeholder={`在 ${selectedEngineName} 中搜索...`}
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onFocus={() => { setIsFocused(true); if (inputValue && suggestions.length > 0) setShowSuggestions(true); }}
-            onBlur={() => setIsFocused(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { performSearch(activeSuggestionIndex >= 0 ? suggestions[activeSuggestionIndex] : inputValue); setActiveSuggestionIndex(-1); }
-              else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveSuggestionIndex(p => p > -1 ? p - 1 : p); }
-              else if (e.key === 'ArrowDown') { e.preventDefault(); setActiveSuggestionIndex(p => p < suggestions.length - 1 ? p + 1 : p); }
-              else if (e.key === 'Escape') setShowSuggestions(false);
-            }}
-          />
-          {inputValue && <button onClick={() => { setInputValue(''); setSuggestions([]); setShowSuggestions(false); }} className="absolute right-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><X size={18} /></button>}
-          <button onClick={() => performSearch(inputValue)} className={`absolute right-2 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all ${isScrolled ? 'scale-90' : ''} ${activeEngineObj?.color || 'bg-blue-500'}`}><Search size={24} strokeWidth={3} /></button>
-        </div>
-        {isDropdownOpen && (
-          <div className={`absolute top-full left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-b-3xl shadow-xl overflow-hidden border-t dark:border-slate-700/50 ${isFocused ? `ring-2 ring-t-0 ${activeRingClass} scale-[1.02] animate-breathe origin-top` : ''}`}>
-            <ul>
-              {suggestions.map((s, i) => (
-                <li key={i} onMouseDown={(e) => { e.preventDefault(); setInputValue(String(s)); performSearch(String(s)); }} onMouseEnter={() => setActiveSuggestionIndex(i)} className={`px-8 py-3 cursor-pointer flex items-center gap-3 transition-colors ${i === activeSuggestionIndex ? `bg-primary/10 dark:bg-primary/20 ${activeTextClass}` : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                  <Search size={16} className="opacity-50" />
-                  <span dangerouslySetInnerHTML={{ __html: String(s).replace(new RegExp(`(${inputValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<b>$1</b>') }} />
-                </li>
-              ))}
-            </ul>
+      {/* Unified Search Block Container */}
+      <div
+        ref={containerRef}
+        className={`w-full max-w-2xl relative group transition-all duration-300
+          ${isScrolled ? 'scale-95' : ''}
+          ${isFocused || isDropdownOpen ? 'z-[100]' : 'z-10'}`}
+      >
+        <div className={`relative flex flex-col overflow-hidden
+          ${isFocused || isDropdownOpen
+            ? `ring-4 ${activeRingClass} shadow-2xl animate-breathe bg-white dark:bg-slate-900 rounded-[2rem] transition-all duration-300`
+            : 'shadow-pill dark:shadow-pill-dark bg-white/95 dark:bg-slate-900/80 group-hover:scale-[1.01] hover:ring-1 hover:ring-primary/30 rounded-full transition-all duration-500 delay-300'}`}
+        >
+          {/* Top Bar Area */}
+          <div className="relative flex items-center w-full bg-inherit">
+            <input
+              className={`w-full pl-8 pr-20 bg-transparent border-none text-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-0 outline-none ${isScrolled ? 'py-3' : 'py-5'}`}
+              placeholder={`在 ${selectedEngineName} 中搜索...`}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onFocus={() => { setIsFocused(true); if (inputValue && suggestions.length > 0) setShowSuggestions(true); }}
+              onBlur={() => setIsFocused(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { performSearch(activeSuggestionIndex >= 0 ? suggestions[activeSuggestionIndex] : inputValue); setActiveSuggestionIndex(-1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveSuggestionIndex(p => p > -1 ? p - 1 : p); }
+                else if (e.key === 'ArrowDown') { e.preventDefault(); setActiveSuggestionIndex(p => p < suggestions.length - 1 ? p + 1 : p); }
+                else if (e.key === 'Escape') setShowSuggestions(false);
+              }}
+            />
+            {inputValue && <button onClick={() => { setInputValue(''); setSuggestions([]); setShowSuggestions(false); }} className="absolute right-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><X size={18} /></button>}
+            <button onClick={() => performSearch(inputValue)} className={`absolute right-2 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all ${isScrolled ? 'scale-90' : ''} ${activeEngineObj?.color || 'bg-blue-500'}`}><Search size={24} strokeWidth={3} /></button>
           </div>
-        )}
+
+          {/* Bottom Suggestions (Internal to the same robust container) */}
+          <AnimatePresence mode="wait">
+            {isDropdownOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300, duration: 0.4 }}
+                className="w-full border-t border-slate-100/50 dark:border-white/5 bg-inherit"
+              >
+                <div className="pb-4">
+                  <ul>
+                    {suggestions.map((s, i) => (
+                      <motion.li
+                        key={i}
+                        initial={{ x: -10, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.03 }}
+                        onMouseDown={(e) => { e.preventDefault(); setInputValue(String(s)); performSearch(String(s)); }}
+                        onMouseEnter={() => setActiveSuggestionIndex(i)}
+                        className={`px-8 py-3 cursor-pointer flex items-center gap-3 transition-colors ${i === activeSuggestionIndex ? `bg-primary/10 dark:bg-primary/20 ${activeTextClass}` : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        <Search size={16} className="opacity-50" />
+                        <span dangerouslySetInnerHTML={{ __html: String(s).replace(new RegExp(`(${inputValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<b>$1</b>') }} />
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Engines (Sortable) */}
