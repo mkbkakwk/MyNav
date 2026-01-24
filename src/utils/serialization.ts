@@ -75,48 +75,39 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
 
             const jsonData = serializeToJson(sections, categories);
 
-            // 1. Check if repo exists and get file SHA
-            let sha = '';
+            // 1. Force fetch the LATEST SHA every time to prevent Mismatch errors
+            let latestSha = '';
             try {
                 const getFileResponse = await fetch(apiUrl, { headers });
                 if (getFileResponse.status === 200) {
-                    const fileData = await getFileResponse.json();
-                    sha = fileData.sha;
-                } else if (getFileResponse.status === 404) {
-                    // File not found is OK for first sync, but if the REPO is 404 it's a problem
-                    // We'll check the repo existence if the PUT fails
-                    console.log('Target file not found, will create a new one.');
-                } else {
-                    const errData = await getFileResponse.json();
-                    throw new Error(`GitHub API Error (GET): ${errData.message || getFileResponse.statusText}`);
+                    const latestFileData = await getFileResponse.json();
+                    latestSha = latestFileData.sha;
                 }
             } catch (e: any) {
-                console.warn('Initial file check failed:', e.message);
+                console.warn('Failed to fetch latest SHA, will attempt without it:', e.message);
             }
 
-            // 2. Update/Create via PUT
+            // 2. Perform Commit (Force Overwrite using the fresh SHA)
             const commitResponse = await fetch(apiUrl, {
                 method: 'PUT',
                 headers,
                 body: JSON.stringify({
-                    message: 'update(nav): cloud sync data update',
+                    message: 'update(nav): robust cloud sync update',
                     content: btoa(unescape(encodeURIComponent(jsonData))),
-                    sha: sha || undefined
+                    sha: latestSha || undefined // Always use the most recent fingerprint
                 })
             });
 
             if (!commitResponse.ok) {
                 const err = await commitResponse.json();
-                // If PUT returns 404, it almost certainly means the REPO or BRANCH doesn't exist
                 if (commitResponse.status === 404) {
-                    throw new Error('仓库未找到或 Token 权限不足。请检查：1. 仓库名是否准确 2. Token 是否勾选了 repo 权限 3. 仓库是否已初始化(至少含有一个分支)。');
+                    throw new Error('仓库未找到或没有权限。请检查仓库名、Token 权限及仓库是否已初始化。');
                 }
-                throw new Error(`GitHub API Error (PUT): ${err.message || commitResponse.statusText}`);
+                throw new Error(`GitHub API Commit Error (PUT): ${err.message || commitResponse.statusText}`);
             }
-            console.log('Successfully synced with private cloud storage');
+            console.log('Successfully synced with private cloud storage (SHA refreshed)');
         } catch (err: any) {
             console.error('同步失败:', err.message);
-            // Re-throw to allow UI to catch if needed
         }
     }
 };

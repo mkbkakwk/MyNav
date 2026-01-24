@@ -138,8 +138,12 @@ const App: React.FC = () => {
   // Modal & Menu States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  // Sync & Persistence Refs
+  const syncTimerRef = React.useRef<any>(null);
+
   // Persistence & Source Sync
   useEffect(() => {
+    // 1. Immediate Local Storage Update
     localStorage.setItem('nav_sections_v1', JSON.stringify(sections));
     window.dispatchEvent(new CustomEvent('nav_sections_updated', { detail: sections }));
 
@@ -147,8 +151,19 @@ const App: React.FC = () => {
     if (categoriesJson) {
       const categories = JSON.parse(categoriesJson);
       const sourceCode = serializeConstants(sections, categories);
-      saveToSource(sourceCode, syncSettings, sections, categories);
+
+      // 2. Debounced Cloud Sync (2 Seconds)
+      if (syncSettings.enabled) {
+        if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+        syncTimerRef.current = setTimeout(() => {
+          saveToSource(sourceCode, syncSettings, sections, categories);
+        }, 2000);
+      }
     }
+
+    return () => {
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    };
   }, [sections, syncSettings]);
 
   // Initial Remote Data Sync
