@@ -26,3 +26,9 @@ export interface SearchEngine {
   url: string;
   suggestionSource: 'baidu' | 'google' | 'bing' | '360' | 'none';
 }
+
+export interface Category {
+  id: string;
+  name: string;
+  engines: SearchEngine[];
+}

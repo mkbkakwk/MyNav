@@ -94,20 +94,58 @@ const Header: React.FC = () => {
   // Constants initialize from localStorage if available
   const [categoriesData, setCategoriesData] = useState<Category[]>(() => {
     const saved = localStorage.getItem('nav_search_categories_v2');
-    if (saved) return JSON.parse(saved);
+    let baseData: Category[];
 
-    // Migration logic from old Record format
-    const oldSaved = localStorage.getItem('nav_search_categories');
-    const sourceData = oldSaved ? JSON.parse(oldSaved) : SEARCH_CATEGORIES;
+    if (saved) {
+      baseData = JSON.parse(saved);
+    } else {
+      const oldSaved = localStorage.getItem('nav_search_categories');
+      const sourceData = oldSaved ? JSON.parse(oldSaved) : SEARCH_CATEGORIES;
 
-    // Check if it's already an array (new format) or record (old format)
-    if (Array.isArray(sourceData)) return sourceData;
+      if (Array.isArray(sourceData)) {
+        baseData = sourceData;
+      } else {
+        baseData = Object.entries(sourceData).map(([name, engines]) => ({
+          id: `cat-${name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name,
+          engines: engines as SearchEngine[]
+        }));
+      }
+    }
 
-    return Object.entries(sourceData).map(([name, engines]) => ({
-      id: `cat-${name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name,
-      engines: engines as SearchEngine[]
-    }));
+    // Smart Merge: Sync with constants and add missing defaults
+    const updatedData = baseData.map(category => {
+      const defaultCategoryEngines = SEARCH_CATEGORIES[category.name];
+      if (!defaultCategoryEngines) return category;
+
+      const mergedEngines = [...category.engines];
+      defaultCategoryEngines.forEach(defaultEngine => {
+        const existingIndex = mergedEngines.findIndex(e => e.name === defaultEngine.name);
+        if (existingIndex > -1) {
+          // Sync URL if it's a placeholder
+          if (mergedEngines[existingIndex].url === '#' || !mergedEngines[existingIndex].url) {
+            mergedEngines[existingIndex] = { ...mergedEngines[existingIndex], url: defaultEngine.url };
+          }
+        } else {
+          // Add missing engine from constants
+          mergedEngines.push(defaultEngine);
+        }
+      });
+      return { ...category, engines: mergedEngines };
+    });
+
+    // Add entirely missing categories
+    Object.keys(SEARCH_CATEGORIES).forEach(catName => {
+      if (!updatedData.find(c => c.name === catName)) {
+        updatedData.push({
+          id: `cat-${catName}-${Date.now()}`,
+          name: catName,
+          engines: SEARCH_CATEGORIES[catName]
+        });
+      }
+    });
+
+    return updatedData;
   });
 
   // State
@@ -191,6 +229,7 @@ const Header: React.FC = () => {
   // Effects
   useEffect(() => {
     localStorage.setItem('nav_search_categories_v2', JSON.stringify(categoriesData));
+    window.dispatchEvent(new CustomEvent('nav_search_updated', { detail: categoriesData }));
   }, [categoriesData]);
 
   // Click outside to close context menu

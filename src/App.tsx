@@ -4,12 +4,14 @@ import Sidebar from './components/Sidebar';
 import Card from './components/Card';
 import ThemeToggle from './components/ThemeToggle';
 import { SECTIONS } from './constants';
-import type { SectionData } from './types';
+import type { SectionData, Category } from './types';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Edit2, Trash2, Plus, X } from 'lucide-react';
+import { serializeConstants, saveToSource } from './utils/serialization';
+
 
 const Background: React.FC = () => (
   <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
@@ -54,7 +56,44 @@ const App: React.FC = () => {
   // State initialization
   const [sections, setSections] = useState<SectionData[]>(() => {
     const saved = localStorage.getItem('nav_sections_v1');
-    return saved ? JSON.parse(saved) : SECTIONS;
+    let baseData: SectionData[] = saved ? JSON.parse(saved) : SECTIONS;
+
+    // 1. Sync existing items: Update placeholders with real URLs from constants
+    const updatedData = baseData.map(savedSection => {
+      const defaultSection = SECTIONS.find(s => s.id === savedSection.id);
+      if (!defaultSection) return savedSection;
+
+      const mergedItems = [...savedSection.items];
+      defaultSection.items.forEach(defaultItem => {
+        const existingIndex = mergedItems.findIndex(i => i.id === defaultItem.id);
+        if (existingIndex > -1) {
+          const item = mergedItems[existingIndex];
+          // Update placeholder URL or specific renamed items
+          if (!item.url || item.url === '#' || item.url === '') {
+            mergedItems[existingIndex] = {
+              ...item,
+              url: defaultItem.url,
+              description: (item.description.includes('聚合搜索平台') || item.description === '') ? defaultItem.description : item.description,
+              title: item.title === '纳诺 AI' ? '秘塔 AI' : item.title,
+              icon: item.icon === '📁' ? defaultItem.icon : item.icon
+            };
+          }
+        } else {
+          // Add missing default item
+          mergedItems.push(defaultItem);
+        }
+      });
+      return { ...savedSection, items: mergedItems };
+    });
+
+    // 2. Add entirely missing sections from constants
+    SECTIONS.forEach(defaultSec => {
+      if (!updatedData.find(s => s.id === defaultSec.id)) {
+        updatedData.push(defaultSec);
+      }
+    });
+
+    return updatedData;
   });
 
   // Modal State
@@ -86,11 +125,33 @@ const App: React.FC = () => {
     x: number; y: number; type: 'section' | 'card'; id: string; parentId?: string;
   } | null>(null);
 
-  // Persistence
+  // Persistence & Source Sync
   useEffect(() => {
     localStorage.setItem('nav_sections_v1', JSON.stringify(sections));
     // Trigger window event for Sidebar sync
     window.dispatchEvent(new CustomEvent('nav_sections_updated', { detail: sections }));
+
+    // Auto-sync to constants.ts
+    const categoriesJson = localStorage.getItem('nav_search_categories_v2');
+    if (categoriesJson) {
+      const categories = JSON.parse(categoriesJson);
+      const sourceCode = serializeConstants(sections, categories);
+      saveToSource(sourceCode);
+    }
+  }, [sections]);
+
+  // Listen for Header updates to trigger total source sync
+  useEffect(() => {
+    const handleHeaderUpdate = () => {
+      const categoriesJson = localStorage.getItem('nav_search_categories_v2');
+      if (categoriesJson) {
+        const categories = JSON.parse(categoriesJson);
+        const sourceCode = serializeConstants(sections, categories);
+        saveToSource(sourceCode);
+      }
+    };
+    window.addEventListener('nav_search_updated', handleHeaderUpdate);
+    return () => window.removeEventListener('nav_search_updated', handleHeaderUpdate);
   }, [sections]);
 
   // Click outside listener for context menu
