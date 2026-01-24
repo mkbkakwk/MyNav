@@ -98,9 +98,9 @@ export const SECTIONS: SectionData[] = [
 - 自动发布到该仓库名下的 GitHub Pages。
 
 > [!TIP]
-> 部署后，请确保在仓库的 **Settings -> Pages -> Build and deployment -> Source** 中选择 **GitHub Actions** 以激活自动发布。
+> 部署后，请确保在仓库的 **Settings -> Pages -> Build and deployment -> Source** 中选择 **GitHub Actions**。选择该项后，无需点击下方的任何 `Configure` 按钮（如 Static HTML 或 Jekyll），系统会自动识别并运行项目中的 `.github/workflows/deploy.yml` 脚本。
 
-## 🤝 贡献建议
+可以直接在仓库顶部的 **Actions** 标签页查看部署进度。
 
 欢迎通过 Issue 或 Pull Request 为 MyNav 贡献更多精美的配色方案或功能特性。
 
