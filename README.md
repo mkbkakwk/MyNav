@@ -90,6 +90,15 @@ export const SECTIONS: SectionData[] = [
    - 开启“在线同步已激活”开关。
 4. **生效**: 之后你在网页上的任何修改都会自动以 commit 形式存入私有仓库的 `nav-data.json` 中，并在几分钟后自动部署更新你的在线站点。
 
+> [!IMPORTANT]
+> **生成 Token 的关键步骤**：
+> 1. 访问 GitHub [Tokens (classic)](https://github.com/settings/tokens) 页面。
+> 2. 点击 `Generate new token (classic)`。
+> 3. **必须勾选 `repo` 权限**（这是最重要的一步，否则同步会失败）。
+> 4. 生成后立即复制 Token，因为它只会显示一次。
+
+![GitHub Token 配置参考](./Image/GenerateToken.png)
+
 ## 📊 数据初始化 (代码与数据分离)
 
 如果你 Fork 了本项目并希望开启隐私同步，请按以下步骤初始化你的私有数据：
