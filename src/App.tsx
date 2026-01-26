@@ -209,24 +209,101 @@ const App: React.FC = () => {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handleDragEnd = (event: DragEndEvent, type: 'section' | 'card', sectionId?: string) => {
+  const findContainer = (id: string) => {
+    if (sections.find(s => s.id === id)) return id;
+    const section = sections.find(s => s.items.find(i => i.id === id));
+    return section ? section.id : null;
+  };
+
+  const handleDragOver = (event: any) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setSections(prev => {
-        if (type === 'section') {
-          const oldIndex = prev.findIndex(s => s.id === active.id);
-          const newIndex = prev.findIndex(s => s.id === over.id);
-          return arrayMove(prev, oldIndex, newIndex);
-        } else {
-          return prev.map(section => {
-            if (section.id === sectionId) {
-              const oldIndex = section.items.findIndex(i => i.id === active.id);
-              const newIndex = section.items.findIndex(i => i.id === over.id);
-              return { ...section, items: arrayMove(section.items, oldIndex, newIndex) };
-            }
-            return section;
-          });
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    // Find the containers
+    const activeContainer = findContainer(activeId);
+    const overContainer = findContainer(overId);
+
+    if (!activeContainer || !overContainer || activeContainer === overContainer) return;
+
+    setSections(prev => {
+      const activeSection = prev.find(s => s.id === activeContainer);
+      const overSection = prev.find(s => s.id === overContainer);
+
+      if (!activeSection || !overSection) return prev;
+
+      const activeItems = activeSection.items;
+      const overItems = overSection.items;
+
+      const activeIndex = activeItems.findIndex(i => i.id === activeId);
+      const overIndex = overItems.findIndex(i => i.id === overId);
+
+      let newIndex;
+      if (prev.find(s => s.id === overId)) {
+        newIndex = overItems.length + 1;
+      } else {
+        const isBelowLastItem = over && overIndex === overItems.length - 1;
+        const modifier = isBelowLastItem ? 1 : 0;
+        newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
+      }
+
+      return prev.map(s => {
+        if (s.id === activeContainer) {
+          return { ...s, items: s.items.filter(i => i.id !== activeId) };
+        } else if (s.id === overContainer) {
+          return {
+            ...s,
+            items: [
+              ...s.items.slice(0, newIndex),
+              activeSection.items[activeIndex],
+              ...s.items.slice(newIndex, s.items.length)
+            ]
+          };
         }
+        return s;
+      });
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeContainer = findContainer(activeId);
+    const overContainer = findContainer(overId);
+
+    if (!activeContainer || !overContainer) return;
+
+    if (activeId !== overId) {
+      setSections(prev => {
+        if (activeContainer === overContainer) {
+          // Internal reorder
+          const section = prev.find(s => s.id === activeContainer);
+          if (!section) return prev;
+
+          if (activeId.startsWith('sec-') || prev.find(s => s.id === activeId)) {
+            // Section reorder
+            const oldIndex = prev.findIndex(s => s.id === activeId);
+            const newIndex = prev.findIndex(s => s.id === overId);
+            return arrayMove(prev, oldIndex, newIndex);
+          } else {
+            // Card internal reorder
+            return prev.map(s => {
+              if (s.id === activeContainer) {
+                const oldIndex = s.items.findIndex(i => i.id === activeId);
+                const newIndex = s.items.findIndex(i => i.id === overId);
+                return { ...s, items: arrayMove(s.items, oldIndex, newIndex) };
+              }
+              return s;
+            });
+          }
+        }
+        return prev; // DragOver already handled movement between containers
       });
     }
   };
@@ -281,7 +358,12 @@ const App: React.FC = () => {
         <Sidebar externalSections={sections} />
 
         <main className="flex-1 min-w-0 space-y-12">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={e => handleDragEnd(e, 'section')}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
             <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
               {sections.map((section, index) => (
                 <section key={section.id} id={section.id} className="scroll-mt-60">
@@ -309,22 +391,20 @@ const App: React.FC = () => {
                     </div>
                   </SortableWrapper>
 
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={e => handleDragEnd(e, 'card', section.id)}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">
-                      <SortableContext items={section.items.map(i => i.id)} strategy={horizontalListSortingStrategy}>
-                        {section.items.map((item, index) => (
-                          <SortableWrapper key={item.id} id={item.id} disabled={!isSortMode}>
-                            <Card
-                              item={item}
-                              index={index}
-                              isSortMode={isSortMode}
-                              onContextMenu={(e) => onRightClick(e, 'card', item.id, section.id)}
-                            />
-                          </SortableWrapper>
-                        ))}
-                      </SortableContext>
-                    </div>
-                  </DndContext>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 min-h-[50px]">
+                    <SortableContext items={section.items.map(i => i.id)} strategy={horizontalListSortingStrategy}>
+                      {section.items.map((item, index) => (
+                        <SortableWrapper key={item.id} id={item.id} disabled={!isSortMode}>
+                          <Card
+                            item={item}
+                            index={index}
+                            isSortMode={isSortMode}
+                            onContextMenu={(e) => onRightClick(e, 'card', item.id, section.id)}
+                          />
+                        </SortableWrapper>
+                      ))}
+                    </SortableContext>
+                  </div>
                 </section>
               ))}
             </SortableContext>
