@@ -11,6 +11,7 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu, isDragOverlay }) => {
   const [isVisible, setIsVisible] = useState(isDragOverlay || false);
+  const [imgErrorCount, setImgErrorCount] = useState(0);
   const cardRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -37,6 +38,59 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu, isD
 
     return () => observer.disconnect();
   }, [isDragOverlay]);
+
+  // Handle image loading error by trying fallbacks or showing default icon
+  const handleImageError = () => {
+    setImgErrorCount(prev => prev + 1);
+  };
+
+  // Determine which icon to show
+  const renderIcon = () => {
+    if (item.icon.startsWith('http')) {
+      // If it's a favicon service URL from our utility, it will have multiple fallbacks
+      // But item.icon might just be a single URL string. 
+      // To keep it simple and robust, we check if the icon is a favicon service URL
+      // or we can just try to rotate through common services if it's a domain-based one.
+
+      // If the icon URL itself fails, we increment error count.
+      // After 3 retries (or if not a service URL), we might want to show a default.
+      if (imgErrorCount >= 3) {
+        return <span className="emoji-icon transition-transform duration-300 group-hover:rotate-6 text-2xl leading-none select-none">🔗</span>;
+      }
+
+      // If it looks like our favicon service URL (google specifically), we can try to "rotate" it manually here
+      // while we wait for a better central state management if needed.
+      let displayUrl = item.icon;
+      if (imgErrorCount > 0) {
+        try {
+          const urlObj = new URL(item.url);
+          const domain = urlObj.hostname;
+          if (imgErrorCount === 1) {
+            displayUrl = `https://api.faviconkit.com/${domain}/64`;
+          } else if (imgErrorCount === 2) {
+            displayUrl = `https://unavatar.io/${domain}`;
+          }
+        } catch (e) {
+          return <span className="emoji-icon transition-transform duration-300 group-hover:rotate-6 text-2xl leading-none select-none">🔗</span>;
+        }
+      }
+
+      return (
+        <img
+          src={displayUrl}
+          alt={item.title}
+          className="w-full h-full object-contain p-2"
+          onError={handleImageError}
+        />
+      );
+    }
+
+    return (
+      <span className="emoji-icon transition-transform duration-300 group-hover:rotate-6 text-2xl leading-none select-none">
+        {item.icon}
+      </span>
+    );
+  };
 
   return (
     <a
@@ -68,11 +122,7 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu, isD
       `}
     >
       <div className="w-12 h-12 rounded-xl bg-white/40 dark:bg-slate-700/40 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-        {item.icon.startsWith('http') ? (
-          <img src={item.icon} alt={item.title} className="w-full h-full object-contain p-2" />
-        ) : (
-          <span className="emoji-icon transition-transform duration-300 group-hover:rotate-6 text-2xl leading-none select-none">{item.icon}</span>
-        )}
+        {renderIcon()}
       </div>
       <div>
         <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors">

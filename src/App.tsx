@@ -11,6 +11,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon } from 'lucide-react';
 import { serializeConstants, saveToSource, fetchRemoteData } from './utils/serialization';
+import { getFaviconUrl } from './utils/favicon';
 import Settings from './components/Settings';
 
 
@@ -139,6 +140,7 @@ const App: React.FC = () => {
 
   // Modal & Menu States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isIconManuallyEdited, setIsIconManuallyEdited] = useState(false);
 
   // Sync & Persistence Refs
   const syncTimerRef = React.useRef<any>(null);
@@ -396,7 +398,10 @@ const App: React.FC = () => {
                         </h2>
                       </div>
                       <button
-                        onClick={() => setModalConfig({ open: true, mode: 'add', type: 'card', parentId: section.id, title: '', description: '', icon: '🔗', url: '' })}
+                        onClick={() => {
+                          setModalConfig({ open: true, mode: 'add', type: 'card', parentId: section.id, title: '', description: '', icon: '🔗', url: '' });
+                          setIsIconManuallyEdited(false);
+                        }}
                         className="opacity-0 group-hover:opacity-100 p-2 rounded-xl bg-white/40 dark:bg-slate-800/40 text-primary hover:bg-white dark:hover:bg-slate-700 transition-all"
                       >
                         <Plus size={20} />
@@ -489,6 +494,7 @@ const App: React.FC = () => {
                   open: true, mode: 'edit', type: contextMenu.type, targetId: contextMenu.id, parentId: contextMenu.parentId,
                   title: data.title, description: (data as any).description || '', icon: data.icon, url: (data as any).url || ''
                 });
+                setIsIconManuallyEdited(false);
               }
               setContextMenu(null);
             }}
@@ -532,7 +538,10 @@ const App: React.FC = () => {
                     <input
                       type="text"
                       value={modalConfig.icon}
-                      onChange={e => setModalConfig(p => ({ ...p, icon: e.target.value }))}
+                      onChange={e => {
+                        setModalConfig(p => ({ ...p, icon: e.target.value }));
+                        setIsIconManuallyEdited(true);
+                      }}
                       className="w-full px-2 py-2 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-white text-center text-xl shrink-0"
                       placeholder="⭐ 或 URL"
                     />
@@ -560,7 +569,24 @@ const App: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">链接 URL</label>
-                    <input type="text" value={modalConfig.url} onChange={e => setModalConfig(p => ({ ...p, url: e.target.value }))} className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-white" placeholder="https://..." />
+                    <input
+                      type="text"
+                      value={modalConfig.url}
+                      onChange={e => {
+                        const newUrl = e.target.value;
+                        setModalConfig(p => ({ ...p, url: newUrl }));
+
+                        // Auto-fetch favicon if icon hasn't been manually edited and URL looks valid
+                        if (!isIconManuallyEdited && (newUrl.startsWith('http://') || newUrl.startsWith('https://'))) {
+                          const favicon = getFaviconUrl(newUrl);
+                          if (favicon) {
+                            setModalConfig(p => ({ ...p, icon: favicon }));
+                          }
+                        }
+                      }}
+                      className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-white"
+                      placeholder="https://..."
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">描述</label>
