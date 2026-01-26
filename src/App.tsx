@@ -4,8 +4,8 @@ import Sidebar from './components/Sidebar';
 import Card from './components/Card';
 import ThemeToggle from './components/ThemeToggle';
 import { SECTIONS } from './constants';
-import type { SectionData, SyncSettings } from './types';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import type { SectionData, SyncSettings, LinkItem } from './types';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -134,6 +134,8 @@ const App: React.FC = () => {
 
   // Sort Mode State
   const [isSortMode, setIsSortMode] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [draggedWidth, setDraggedWidth] = useState<number | null>(null);
 
   // Modal & Menu States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -267,8 +269,18 @@ const App: React.FC = () => {
     });
   };
 
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
+    // Capture the width of the element being dragged
+    const activeElement = event.active.rect.current.initial;
+    if (activeElement) {
+      setDraggedWidth(activeElement.width);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
     if (!over) return;
 
     const activeId = active.id as string;
@@ -361,6 +373,7 @@ const App: React.FC = () => {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
@@ -408,6 +421,43 @@ const App: React.FC = () => {
                 </section>
               ))}
             </SortableContext>
+            <DragOverlay dropAnimation={{
+              sideEffects: defaultDropAnimationSideEffects({
+                styles: {
+                  active: {
+                    opacity: '0.4',
+                  },
+                },
+              }),
+            }}>
+              {activeId ? (
+                (() => {
+                  const section = sections.find(s => s.id === activeId);
+                  if (section) {
+                    return (
+                      <div className="p-4 bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-2xl border border-primary/30 backdrop-blur-md">
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{section.icon}</span>
+                          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{section.title}</h2>
+                        </div>
+                      </div>
+                    );
+                  }
+                  const item = sections.flatMap(s => s.items).find(i => (i.id as string) === activeId) as LinkItem | undefined;
+                  if (item) {
+                    return (
+                      <div
+                        style={{ width: draggedWidth ? `${draggedWidth}px` : 'auto' }}
+                        className="pointer-events-none"
+                      >
+                        <Card item={item} index={0} isSortMode={true} isDragOverlay={true} />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()
+              ) : null}
+            </DragOverlay>
           </DndContext>
 
           {/* Add Section Entry */}

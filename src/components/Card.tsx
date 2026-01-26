@@ -6,13 +6,18 @@ interface CardProps {
   index: number;
   isSortMode: boolean;
   onContextMenu?: (e: React.MouseEvent) => void;
+  isDragOverlay?: boolean;
 }
 
-const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu }) => {
-  const [isVisible, setIsVisible] = useState(false);
+const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu, isDragOverlay }) => {
+  const [isVisible, setIsVisible] = useState(isDragOverlay || false);
   const cardRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
+    if (isDragOverlay) {
+      setIsVisible(true);
+      return;
+    }
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -31,20 +36,20 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu }) =
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [isDragOverlay]);
 
   return (
     <a
       ref={cardRef}
-      href={isSortMode ? undefined : item.url}
-      target={isSortMode ? undefined : "_blank"}
-      rel={isSortMode ? undefined : "noopener noreferrer"}
+      href={isSortMode || isDragOverlay ? undefined : item.url}
+      target={isSortMode || isDragOverlay ? undefined : "_blank"}
+      rel={isSortMode || isDragOverlay ? undefined : "noopener noreferrer"}
       onContextMenu={onContextMenu}
-      onClick={(e) => isSortMode && e.preventDefault()}
+      onClick={(e) => (isSortMode || isDragOverlay) && e.preventDefault()}
       style={{
-        transitionDelay: isVisible ? `${(index % 8) * 50}ms` : '0ms',
-        animationDelay: isSortMode ? `${(index % 7) * -0.13}s` : '0s',
-        animationDuration: isSortMode ? `${0.3 + (index % 5) * 0.04}s` : '0.35s'
+        transitionDelay: isVisible && !isDragOverlay ? `${(index % 8) * 50}ms` : '0ms',
+        animationDelay: isSortMode && !isDragOverlay ? `${(index % 7) * -0.13}s` : '0s',
+        animationDuration: isSortMode && !isDragOverlay ? `${0.3 + (index % 5) * 0.04}s` : '0.35s'
       }}
       className={`group relative flex items-start h-full gap-4 p-4 rounded-2xl 
         backdrop-blur-xl border border-white/40 dark:border-white/10
@@ -52,12 +57,14 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu }) =
         hover:shadow-clay-hover dark:hover:shadow-indigo-500/20 
         z-10 hover:z-20 
         transform transition-all duration-500 ease-out
-        ${isVisible
+        ${isVisible || isDragOverlay
           ? 'opacity-100 translate-y-0 scale-100'
           : 'opacity-0 translate-y-12 scale-95'}
-        ${isSortMode
-          ? 'cursor-move ring-2 ring-amber-500/50 scale-[0.98] animate-wiggle'
-          : 'hover:-translate-y-2 hover:scale-[1.03] hover:rotate-1'}
+        ${isDragOverlay
+          ? 'ring-2 ring-primary shadow-2xl scale-105 rotate-1 rotate-y-3 skew-x-1 cursor-grabbing'
+          : isSortMode
+            ? 'cursor-move ring-2 ring-amber-500/50 scale-[0.98] animate-wiggle'
+            : 'hover:-translate-y-2 hover:scale-[1.03] hover:rotate-1'}
       `}
     >
       <div className="w-12 h-12 rounded-xl bg-white/40 dark:bg-slate-700/40 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300 overflow-hidden">
