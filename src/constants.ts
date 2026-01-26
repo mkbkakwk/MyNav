@@ -225,13 +225,6 @@ export const SECTIONS: SectionData[] = [
         "url": "https://search.chongbuluo.com/"
       },
       {
-        "id": "2",
-        "title": "豆包 AI",
-        "description": "写作、摘要、数据",
-        "icon": "🤖",
-        "url": "https://www.doubao.com/"
-      },
-      {
         "id": "3",
         "title": "秘塔 AI",
         "description": "AI 资源搜索",
@@ -272,6 +265,13 @@ export const SECTIONS: SectionData[] = [
         "description": "贷款市场报价利率",
         "icon": "📊",
         "url": "https://www.lkdf.xyz/"
+      },
+      {
+        "id": "2",
+        "title": "豆包 AI",
+        "description": "写作、摘要、数据",
+        "icon": "🤖",
+        "url": "https://www.doubao.com/"
       }
     ]
   },
@@ -295,18 +295,18 @@ export const SECTIONS: SectionData[] = [
         "url": "https://docs.pingcap.com/zh/tidb/stable"
       },
       {
-        "id": "d4",
-        "title": "编程入门",
-        "description": "基础编程知识",
-        "icon": "💻",
-        "url": "https://www.freecodecamp.org/chinese/"
-      },
-      {
         "id": "d1",
         "title": "全民数字素养",
         "description": "提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能",
         "icon": "📱",
         "url": "http://chinadata.cn/"
+      },
+      {
+        "id": "d4",
+        "title": "编程入门",
+        "description": "基础编程知识",
+        "icon": "💻",
+        "url": "https://www.freecodecamp.org/chinese/"
       }
     ]
   },
@@ -330,18 +330,18 @@ export const SECTIONS: SectionData[] = [
         "url": "https://flomoapp.com/"
       },
       {
-        "id": "11",
-        "title": "看板工具",
-        "description": "可视化项目管理",
-        "icon": "📋",
-        "url": "https://trello.com/"
-      },
-      {
         "id": "12",
         "title": "息流",
         "description": "新一代生产力工具",
         "icon": "🌊",
         "url": "https://flowus.cn/"
+      },
+      {
+        "id": "11",
+        "title": "看板工具",
+        "description": "可视化项目管理",
+        "icon": "📋",
+        "url": "https://trello.com/"
       },
       {
         "id": "13",

@@ -426,6 +426,8 @@ const Header: React.FC = () => {
   const performSearch = (query: string) => {
     if (!query.trim() || !activeEngineObj) return;
     window.open(activeEngineObj.url.replace('{q}', encodeURIComponent(query)), '_blank');
+    setInputValue('');
+    setSuggestions([]);
     setShowSuggestions(false);
   };
 
