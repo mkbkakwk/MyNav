@@ -594,18 +594,22 @@ const App: React.FC = () => {
       {/* 🧈 Butter Menu: Expandable Vertical utility list */}
       <div className="fixed bottom-8 right-8 z-[60] group">
         {/* Expanded Stack */}
-        <div className="flex flex-col gap-4 mb-4 items-center transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) opacity-0 translate-y-10 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto">
+        <div className={`flex flex-col gap-4 mb-4 items-center transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) 
+          ${isSortMode
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-10 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto'}`}
+        >
           {/* Sort Mode Toggle Button */}
           <button
             onClick={() => setIsSortMode(!isSortMode)}
-            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-100 transform scale-50 group-hover:scale-100 hover:scale-110 active:scale-95 ring-1 ring-slate-900/5 dark:ring-white/10 ${isSortMode ? 'bg-amber-500 text-white animate-pulse' : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-100 transform ring-1 ring-slate-900/5 dark:ring-white/10 ${isSortMode ? 'bg-amber-500 text-white animate-pulse scale-110' : 'scale-50 group-hover:scale-100 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:scale-110'}`}
             title={isSortMode ? '退出排序模式' : '进入排序模式'}
           >
             {isSortMode ? <Unlock size={24} /> : <Lock size={24} />}
           </button>
 
           {/* Theme Toggle Button */}
-          <div className="transform transition-transform duration-500 delay-75 scale-50 group-hover:scale-100">
+          <div className={`transform transition-transform duration-500 delay-75 ${isSortMode ? 'scale-100' : 'scale-50 group-hover:scale-100'}`}>
             <ThemeToggle />
           </div>
         </div>
@@ -613,7 +617,8 @@ const App: React.FC = () => {
         {/* Main Trigger Button (Settings) */}
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="w-14 h-14 rounded-full bg-indigo-500 text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all ring-4 ring-indigo-500/20 group-hover:rotate-90"
+          className={`w-14 h-14 rounded-full bg-indigo-500 text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all ring-4 ring-indigo-500/20 
+            ${isSortMode ? 'rotate-90' : 'group-hover:rotate-90'}`}
           aria-label="Toggle Menu"
         >
           <SettingsIcon size={24} />
