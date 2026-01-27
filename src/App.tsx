@@ -231,8 +231,16 @@ const App: React.FC = () => {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Robust check for sections
+    const isActiveSection = sections.some(s => s.id === activeId);
+    const isOverSection = sections.some(s => s.id === overId);
+
+    // 1. Hard block for section drags in handleDragOver
+    // Section reordering should ONLY happen in handleDragEnd
+    if (isActiveSection || isOverSection) return;
 
     // Find the containers
     const activeContainer = findContainer(activeId);
@@ -303,29 +311,42 @@ const App: React.FC = () => {
 
     if (activeId !== overId) {
       setSections(prev => {
+        // Resolve section reordering first
+        const isActiveSection = prev.some(s => s.id === activeId);
+
+        if (isActiveSection) {
+          const oldIndex = prev.findIndex(s => s.id === activeId);
+          // If dropped over a card, find that card's section index
+          let newIndex = prev.findIndex(s => s.id === overId);
+          if (newIndex === -1) {
+            // Find which section contains this card
+            const container = prev.find(s => s.items.some(i => i.id === overId));
+            if (container) newIndex = prev.findIndex(s => s.id === container.id);
+          }
+
+          if (oldIndex !== -1 && newIndex !== -1) {
+            return arrayMove(prev, oldIndex, newIndex);
+          }
+          return prev;
+        }
+
+        // Card internal reorder (same container)
         if (activeContainer === overContainer) {
-          // Internal reorder
           const section = prev.find(s => s.id === activeContainer);
           if (!section) return prev;
 
-          if (activeId.startsWith('sec-') || prev.find(s => s.id === activeId)) {
-            // Section reorder
-            const oldIndex = prev.findIndex(s => s.id === activeId);
-            const newIndex = prev.findIndex(s => s.id === overId);
-            return arrayMove(prev, oldIndex, newIndex);
-          } else {
-            // Card internal reorder
-            return prev.map(s => {
-              if (s.id === activeContainer) {
-                const oldIndex = s.items.findIndex(i => i.id === activeId);
-                const newIndex = s.items.findIndex(i => i.id === overId);
+          return prev.map(s => {
+            if (s.id === activeContainer) {
+              const oldIndex = s.items.findIndex(i => i.id === activeId);
+              const newIndex = s.items.findIndex(i => i.id === overId);
+              if (oldIndex !== -1 && newIndex !== -1) {
                 return { ...s, items: arrayMove(s.items, oldIndex, newIndex) };
               }
-              return s;
-            });
-          }
+            }
+            return s;
+          });
         }
-        return prev; // DragOver already handled movement between containers
+        return prev;
       });
     }
   };
