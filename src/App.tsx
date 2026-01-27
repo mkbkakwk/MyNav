@@ -11,7 +11,8 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon } from 'lucide-react';
 import { serializeConstants, saveToSource, fetchRemoteData } from './utils/serialization';
-import { getFaviconUrl } from './utils/favicon';
+import { getFaviconUrl, getFaviconUrls } from './utils/favicon';
+import { fetchWebsiteMetadata } from './utils/metadata';
 import Settings from './components/Settings';
 
 
@@ -141,6 +142,10 @@ const App: React.FC = () => {
   // Modal & Menu States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isIconManuallyEdited, setIsIconManuallyEdited] = useState(false);
+  const [isTitleManuallyEdited, setIsTitleManuallyEdited] = useState(false);
+  const [isDescriptionManuallyEdited, setIsDescriptionManuallyEdited] = useState(false);
+  const [isMetadataLoading, setIsMetadataLoading] = useState(false);
+  const [iconCandidates, setIconCandidates] = useState<string[]>([]);
 
   // Sync & Persistence Refs
   const syncTimerRef = React.useRef<any>(null);
@@ -401,6 +406,9 @@ const App: React.FC = () => {
                         onClick={() => {
                           setModalConfig({ open: true, mode: 'add', type: 'card', parentId: section.id, title: '', description: '', icon: '🔗', url: '' });
                           setIsIconManuallyEdited(false);
+                          setIsTitleManuallyEdited(false);
+                          setIsDescriptionManuallyEdited(false);
+                          setIconCandidates([]);
                         }}
                         className="opacity-0 group-hover:opacity-100 p-2 rounded-xl bg-white/40 dark:bg-slate-800/40 text-primary hover:bg-white dark:hover:bg-slate-700 transition-all"
                       >
@@ -495,6 +503,9 @@ const App: React.FC = () => {
                   title: data.title, description: (data as any).description || '', icon: data.icon, url: (data as any).url || ''
                 });
                 setIsIconManuallyEdited(false);
+                setIsTitleManuallyEdited(false);
+                setIsDescriptionManuallyEdited(false);
+                setIconCandidates([]);
               }
               setContextMenu(null);
             }}
@@ -525,6 +536,15 @@ const App: React.FC = () => {
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">
                 {modalConfig.mode === 'add' ? '添加' : '编辑'}
                 {modalConfig.type === 'section' ? '分类' : '站点'}
+                {isMetadataLoading && (
+                  <span className="ml-3 inline-flex items-center">
+                    <svg className="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="ml-2 text-xs text-slate-400 font-normal">获取信息中...</span>
+                  </span>
+                )}
               </h3>
               <button onClick={() => setModalConfig(p => ({ ...p, open: false }))} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
                 <X size={24} />
@@ -552,7 +572,16 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">名称</label>
-                  <input type="text" value={modalConfig.title} onChange={e => setModalConfig(p => ({ ...p, title: e.target.value }))} className="w-full px-4 py-2 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-white" placeholder="输入名称..." />
+                  <input
+                    type="text"
+                    value={modalConfig.title}
+                    onChange={e => {
+                      setModalConfig(p => ({ ...p, title: e.target.value }));
+                      setIsTitleManuallyEdited(true);
+                    }}
+                    className="w-full px-4 py-2 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-white"
+                    placeholder="输入名称..."
+                  />
                 </div>
               </div>
               {modalConfig.type === 'card' && (
@@ -567,20 +596,73 @@ const App: React.FC = () => {
                       )}
                     </div>
                   </div>
+
+                  {iconCandidates.length > 0 && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择图标</label>
+                      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                        {iconCandidates.map((url, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setModalConfig(p => ({ ...p, icon: url }));
+                              setIsIconManuallyEdited(true);
+                            }}
+                            className={`flex-shrink-0 w-12 h-12 rounded-xl border-2 transition-all overflow-hidden p-1 bg-white dark:bg-slate-700 ${modalConfig.icon === url ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-200 dark:hover:border-slate-600'
+                              }`}
+                          >
+                            <img src={url} alt="" className="w-full h-full object-contain" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">链接 URL</label>
                     <input
                       type="text"
                       value={modalConfig.url}
-                      onChange={e => {
+                      onChange={async e => {
                         const newUrl = e.target.value;
                         setModalConfig(p => ({ ...p, url: newUrl }));
+                        setIconCandidates([]); // Reset on URL change
 
-                        // Auto-fetch favicon if icon hasn't been manually edited and URL looks valid
-                        if (!isIconManuallyEdited && (newUrl.startsWith('http://') || newUrl.startsWith('https://'))) {
-                          const favicon = getFaviconUrl(newUrl);
-                          if (favicon) {
-                            setModalConfig(p => ({ ...p, icon: favicon }));
+                        if (newUrl.startsWith('http://') || newUrl.startsWith('https://')) {
+                          // Auto-fetch favicon if icon hasn't been manually edited
+                          if (!isIconManuallyEdited) {
+                            const favicon = getFaviconUrl(newUrl);
+                            if (favicon) {
+                              setModalConfig(p => ({ ...p, icon: favicon }));
+                            }
+                          }
+
+                          // Auto-fetch metadata (title & description)
+                          if (!isTitleManuallyEdited || !isDescriptionManuallyEdited) {
+                            setIsMetadataLoading(true);
+                            const metadata = await fetchWebsiteMetadata(newUrl);
+                            if (metadata) {
+                              setModalConfig(p => ({
+                                ...p,
+                                title: !isTitleManuallyEdited ? (metadata.title || p.title) : p.title,
+                                description: !isDescriptionManuallyEdited ? (metadata.description || p.description) : p.description
+                              }));
+
+                              // Collect all candidates
+                              const faviconServices = getFaviconUrls(newUrl);
+                              const allCandidates = Array.from(new Set([
+                                ...(metadata.icons || []),
+                                ...faviconServices
+                              ])).filter(url => url && url.startsWith('http'));
+
+                              setIconCandidates(allCandidates);
+
+                              // If icon hasn't been manually edited, pick the first one as default
+                              if (!isIconManuallyEdited && allCandidates.length > 0) {
+                                setModalConfig(p => ({ ...p, icon: allCandidates[0] }));
+                              }
+                            }
+                            setIsMetadataLoading(false);
                           }
                         }
                       }}
@@ -590,7 +672,16 @@ const App: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">描述</label>
-                    <textarea value={modalConfig.description} onChange={e => setModalConfig(p => ({ ...p, description: e.target.value }))} className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-white resize-none" rows={3} placeholder="输入描述..." />
+                    <textarea
+                      value={modalConfig.description}
+                      onChange={e => {
+                        setModalConfig(p => ({ ...p, description: e.target.value }));
+                        setIsDescriptionManuallyEdited(true);
+                      }}
+                      className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-white resize-none"
+                      rows={3}
+                      placeholder="输入描述..."
+                    />
                   </div>
                 </>
               )}
