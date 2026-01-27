@@ -149,6 +149,8 @@ const App: React.FC = () => {
 
   // Sync & Persistence Refs
   const syncTimerRef = React.useRef<any>(null);
+  const metadataFetchRef = React.useRef<AbortController | null>(null);
+  const metadataDebounceRef = React.useRef<any>(null);
 
   // Persistence & Source Sync
   useEffect(() => {
@@ -546,7 +548,14 @@ const App: React.FC = () => {
                   </span>
                 )}
               </h3>
-              <button onClick={() => setModalConfig(p => ({ ...p, open: false }))} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+              <button
+                onClick={() => {
+                  setModalConfig(p => ({ ...p, open: false }));
+                  if (metadataFetchRef.current) metadataFetchRef.current.abort();
+                  if (metadataDebounceRef.current) clearTimeout(metadataDebounceRef.current);
+                }}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+              >
                 <X size={24} />
               </button>
             </div>
@@ -626,10 +635,15 @@ const App: React.FC = () => {
                       onChange={async e => {
                         const newUrl = e.target.value;
                         setModalConfig(p => ({ ...p, url: newUrl }));
-                        setIconCandidates([]); // Reset on URL change
+                        setIconCandidates([]);
+                        setIsMetadataLoading(false);
+
+                        // Clear previous debounce and fetch
+                        if (metadataDebounceRef.current) clearTimeout(metadataDebounceRef.current);
+                        if (metadataFetchRef.current) metadataFetchRef.current.abort();
 
                         if (newUrl.startsWith('http://') || newUrl.startsWith('https://')) {
-                          // Auto-fetch favicon if icon hasn't been manually edited
+                          // Auto-fetch favicon immediately (local logic, doesn't need abort)
                           if (!isIconManuallyEdited) {
                             const favicon = getFaviconUrl(newUrl);
                             if (favicon) {
@@ -637,33 +651,47 @@ const App: React.FC = () => {
                             }
                           }
 
-                          // Auto-fetch metadata (title & description)
-                          if (!isTitleManuallyEdited || !isDescriptionManuallyEdited) {
-                            setIsMetadataLoading(true);
-                            const metadata = await fetchWebsiteMetadata(newUrl);
-                            if (metadata) {
-                              setModalConfig(p => ({
-                                ...p,
-                                title: !isTitleManuallyEdited ? (metadata.title || p.title) : p.title,
-                                description: !isDescriptionManuallyEdited ? (metadata.description || p.description) : p.description
-                              }));
+                          // Debounce heavy metadata fetching
+                          metadataDebounceRef.current = setTimeout(async () => {
+                            if (!isTitleManuallyEdited || !isDescriptionManuallyEdited) {
+                              setIsMetadataLoading(true);
 
-                              // Collect all candidates
-                              const faviconServices = getFaviconUrls(newUrl);
-                              const allCandidates = Array.from(new Set([
-                                ...(metadata.icons || []),
-                                ...faviconServices
-                              ])).filter(url => url && url.startsWith('http'));
+                              const controller = new AbortController();
+                              metadataFetchRef.current = controller;
 
-                              setIconCandidates(allCandidates);
+                              try {
+                                const metadata = await fetchWebsiteMetadata(newUrl, controller.signal);
 
-                              // If icon hasn't been manually edited, pick the first one as default
-                              if (!isIconManuallyEdited && allCandidates.length > 0) {
-                                setModalConfig(p => ({ ...p, icon: allCandidates[0] }));
+                                if (!controller.signal.aborted && metadata) {
+                                  setModalConfig(p => ({
+                                    ...p,
+                                    title: !isTitleManuallyEdited ? (metadata.title || p.title) : p.title,
+                                    description: !isDescriptionManuallyEdited ? (metadata.description || p.description) : p.description
+                                  }));
+
+                                  const faviconServices = getFaviconUrls(newUrl);
+                                  const allCandidates = Array.from(new Set([
+                                    ...(metadata.icons || []),
+                                    ...faviconServices
+                                  ])).filter(url => url && url.startsWith('http'));
+
+                                  setIconCandidates(allCandidates);
+
+                                  if (!isIconManuallyEdited && allCandidates.length > 0) {
+                                    setModalConfig(p => ({ ...p, icon: allCandidates[0] }));
+                                  }
+                                }
+                              } catch (err: any) {
+                                if (err.name !== 'AbortError') {
+                                  console.error('Metadata fetch error:', err);
+                                }
+                              } finally {
+                                if (!controller.signal.aborted) {
+                                  setIsMetadataLoading(false);
+                                }
                               }
                             }
-                            setIsMetadataLoading(false);
-                          }
+                          }, 500); // 500ms debounce
                         }
                       }}
                       className="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 border-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-white"
@@ -687,7 +715,11 @@ const App: React.FC = () => {
               )}
             </div>
             <div className="mt-8 flex justify-end gap-3">
-              <button onClick={() => setModalConfig(p => ({ ...p, open: false }))} className="px-5 py-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">取消</button>
+              <button onClick={() => {
+                setModalConfig(p => ({ ...p, open: false }));
+                if (metadataFetchRef.current) metadataFetchRef.current.abort();
+                if (metadataDebounceRef.current) clearTimeout(metadataDebounceRef.current);
+              }} className="px-5 py-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">取消</button>
               <button onClick={handleSave} disabled={!modalConfig.title.trim() || !modalConfig.icon.trim()} className="px-6 py-2 rounded-xl bg-primary text-white font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/30 disabled:opacity-50">保存</button>
             </div>
           </div>
