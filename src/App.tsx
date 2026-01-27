@@ -14,6 +14,7 @@ import { serializeConstants, saveToSource, fetchRemoteData } from './utils/seria
 import { getFaviconUrl, getFaviconUrls } from './utils/favicon';
 import { fetchWebsiteMetadata } from './utils/metadata';
 import Settings from './components/Settings';
+import IconPreview from './components/IconPreview';
 
 
 const Background: React.FC = () => (
@@ -598,11 +599,12 @@ const App: React.FC = () => {
                   <div className="flex justify-between items-center bg-primary/5 p-2 rounded-xl border border-primary/10 mb-2">
                     <span className="text-xs text-primary font-bold">图标预览:</span>
                     <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 shadow-sm flex items-center justify-center overflow-hidden">
-                      {modalConfig.icon.startsWith('http') ? (
-                        <img src={modalConfig.icon} alt="" className="w-full h-full object-contain p-1" />
-                      ) : (
-                        <span className="text-xl">{modalConfig.icon || '🔗'}</span>
-                      )}
+                      <IconPreview
+                        icon={modalConfig.icon}
+                        siteUrl={modalConfig.url}
+                        size={18}
+                        imgClassName="w-full h-full object-contain p-0.5"
+                      />
                     </div>
                   </div>
 
@@ -620,7 +622,12 @@ const App: React.FC = () => {
                             className={`flex-shrink-0 w-12 h-12 rounded-xl border-2 transition-all overflow-hidden p-1 bg-white dark:bg-slate-700 ${modalConfig.icon === url ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-200 dark:hover:border-slate-600'
                               }`}
                           >
-                            <img src={url} alt="" className="w-full h-full object-contain" />
+                            <IconPreview
+                              icon={url}
+                              siteUrl={modalConfig.url}
+                              size={16}
+                              imgClassName="w-full h-full object-contain"
+                            />
                           </button>
                         ))}
                       </div>

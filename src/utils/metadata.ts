@@ -38,30 +38,54 @@ const extractMetadataFromHtml = (html: string, baseUrl: string): WebsiteMetadata
     const title = getMeta(['og:title', 'twitter:title']) || doc.title || undefined;
     const description = getMeta(['og:description', 'twitter:description', 'description']) || undefined;
 
-    const icons: string[] = [];
+    const iconCandidates: string[] = [];
 
-    // 1. OG/Twitter Images
+    // 1. Social Images (OG/Twitter) - Good quality
     const socialImage = getMeta(['og:image', 'twitter:image', 'twitter:image:src']);
-    if (socialImage) icons.push(resolveUrl(baseUrl, socialImage));
+    if (socialImage) iconCandidates.push(resolveUrl(baseUrl, socialImage));
 
-    // 2. Comprehensive Favicon Scanning
-    const selectors = [
-        'link[rel="icon"]',
-        'link[rel="shortcut icon"]',
+    // 2. High Quality Favicons / Apple Touch Icons
+    const highQualitySelectors = [
         'link[rel="apple-touch-icon"]',
         'link[rel="apple-touch-icon-precomposed"]',
-        'link[rel="mask-icon"]',
-        'link[rel="fluid-icon"]'
+        'link[rel="fluid-icon"]',
+        'link[rel="icon"][sizes="192x192"]',
+        'link[rel="icon"][sizes="180x180"]',
+        'link[rel="icon"][sizes="152x152"]',
+        'link[rel="icon"][sizes="120x120"]',
+        'link[rel="icon"][sizes="96x96"]',
+        'link[rel="icon"][sizes="48x48"]',
+        'link[rel="icon"][sizes="32x32"]'
     ];
 
-    selectors.forEach(selector => {
+    highQualitySelectors.forEach(selector => {
         doc.querySelectorAll(selector).forEach(el => {
             const href = el.getAttribute('href');
-            if (href) icons.push(resolveUrl(baseUrl, href));
+            if (href) iconCandidates.push(resolveUrl(baseUrl, href));
         });
     });
 
-    return { title, description, icons: Array.from(new Set(icons)) };
+    // 3. Fallback Icons (Standard rel="icon" or "shortcut icon")
+    const fallbackSelectors = ['link[rel="icon"]', 'link[rel="shortcut icon"]', 'link[rel="mask-icon"]'];
+    fallbackSelectors.forEach(selector => {
+        doc.querySelectorAll(selector).forEach(el => {
+            const href = el.getAttribute('href');
+            if (href) iconCandidates.push(resolveUrl(baseUrl, href));
+        });
+    });
+
+    // Unique and Sort: Prioritize PNG/SVG over ICO
+    const uniqueIcons = Array.from(new Set(iconCandidates));
+    const sortedIcons = uniqueIcons.sort((a, b) => {
+        const isHighQuality = (url: string) => url.toLowerCase().includes('png') || url.toLowerCase().includes('svg') || url.toLowerCase().includes('apple-touch-icon');
+        const aHigh = isHighQuality(a);
+        const bHigh = isHighQuality(b);
+        if (aHigh && !bHigh) return -1;
+        if (!aHigh && bHigh) return 1;
+        return 0;
+    });
+
+    return { title, description, icons: sortedIcons };
 };
 
 export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSignal): Promise<WebsiteMetadata | null> => {
