@@ -146,6 +146,7 @@ const App: React.FC = () => {
   const [isTitleManuallyEdited, setIsTitleManuallyEdited] = useState(false);
   const [isDescriptionManuallyEdited, setIsDescriptionManuallyEdited] = useState(false);
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
+  const [isInitialLoaded, setIsInitialLoaded] = useState(false);
   const [iconCandidates, setIconCandidates] = useState<string[]>([]);
 
   // Sync & Persistence Refs
@@ -165,7 +166,7 @@ const App: React.FC = () => {
       const sourceCode = serializeConstants(sections, categories);
 
       // 2. Debounced Cloud Sync (2 Seconds)
-      if (syncSettings.enabled) {
+      if (syncSettings.enabled && isInitialLoaded) {
         if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
         syncTimerRef.current = setTimeout(() => {
           saveToSource(sourceCode, syncSettings, sections, categories);
@@ -190,6 +191,7 @@ const App: React.FC = () => {
           window.dispatchEvent(new CustomEvent('nav_search_remote_synced', { detail: remoteData.categories }));
         }
       }
+      setIsInitialLoaded(true);
     };
     initRemoteData();
   }, []); // Run once on mount
