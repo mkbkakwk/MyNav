@@ -60,6 +60,15 @@ const App: React.FC = () => {
   // State initialization
   const [sections, setSections] = useState<SectionData[]>(() => {
     const saved = localStorage.getItem('nav_sections_v1');
+    const syncSettingsSaved = localStorage.getItem('nav_sync_settings');
+    const syncSettings = syncSettingsSaved ? JSON.parse(syncSettingsSaved) : { enabled: false };
+
+    // If cloud sync is enabled, ONLY use localStorage data (no constants.ts merging)
+    if (syncSettings.enabled) {
+      return saved ? JSON.parse(saved) : [];
+    }
+
+    // Local mode: merge with constants.ts for backwards compatibility
     let baseData: SectionData[] = saved ? JSON.parse(saved) : SECTIONS;
 
     // 1. Sync existing items: Update placeholders with real URLs from constants
