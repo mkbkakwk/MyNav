@@ -8,6 +8,15 @@ export interface WebsiteMetadata {
     icons: string[]; // List of candidate icons
 }
 
+// In-memory cache for metadata with 5-minute expiration
+interface CacheEntry {
+    data: WebsiteMetadata;
+    timestamp: number;
+}
+
+const metadataCache = new Map<string, CacheEntry>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Resolves a potentially relative URL against a base URL.
  */
@@ -89,6 +98,12 @@ const extractMetadataFromHtml = (html: string, baseUrl: string): WebsiteMetadata
 };
 
 export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSignal): Promise<WebsiteMetadata | null> => {
+    // Check cache first
+    const cached = metadataCache.get(url);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        return cached.data;
+    }
+
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), 4000); // 4s total maximum for all fallback attempts
 
@@ -125,11 +140,14 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
                     if (image?.url) discoveredIcons.push(image.url);
                     clearTimeout(mcTimeout);
                     clearTimeout(timeoutId);
-                    return {
+                    const metadata = {
                         title: title || undefined,
                         description: description || undefined,
                         icons: Array.from(new Set(discoveredIcons))
                     };
+                    // Cache the result
+                    metadataCache.set(url, { data: metadata, timestamp: Date.now() });
+                    return metadata;
                 }
             }
         } catch (e: any) {
@@ -160,7 +178,10 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
                     if (html) {
                         clearTimeout(pTimeout);
                         clearTimeout(timeoutId);
-                        return extractMetadataFromHtml(html, url);
+                        const metadata = extractMetadataFromHtml(html, url);
+                        // Cache the result
+                        metadataCache.set(url, { data: metadata, timestamp: Date.now() });
+                        return metadata;
                     }
                 }
             } catch (e: any) {
@@ -178,7 +199,10 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
         if (unavatarResponse.ok) {
             const data = await unavatarResponse.json();
             clearTimeout(timeoutId);
-            return { icons: data.url ? [data.url] : [] };
+            const metadata = { icons: data.url ? [data.url] : [] };
+            // Cache the result
+            metadataCache.set(url, { data: metadata, timestamp: Date.now() });
+            return metadata;
         }
 
         return null;

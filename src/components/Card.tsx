@@ -82,7 +82,7 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu, isD
         {renderIcon()}
       </div>
       <div>
-        <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+        <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate line-clamp-1">
           {item.title}
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5 line-clamp-2 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-colors">
