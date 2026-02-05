@@ -81,8 +81,8 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu, isD
       <div className="w-12 h-12 rounded-xl bg-white/40 dark:bg-slate-700/40 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300 overflow-hidden">
         {renderIcon()}
       </div>
-      <div>
-        <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate line-clamp-1">
+      <div className="flex-1 min-w-0">
+        <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate block w-full">
           {item.title}
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5 line-clamp-2 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-colors">
