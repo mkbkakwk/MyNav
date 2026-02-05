@@ -156,6 +156,7 @@ const App: React.FC = () => {
   const [isDescriptionManuallyEdited, setIsDescriptionManuallyEdited] = useState(false);
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   const [isInitialLoaded, setIsInitialLoaded] = useState(false);
+  const [isFetchFailed, setIsFetchFailed] = useState(false);
   const [iconCandidates, setIconCandidates] = useState<string[]>([]);
 
   // Sync & Persistence Refs
@@ -592,6 +593,18 @@ const App: React.FC = () => {
                 <X size={24} />
               </button>
             </div>
+
+            {isFetchFailed && !isTitleManuallyEdited && !isDescriptionManuallyEdited && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-3 mb-5 animate-in fade-in slide-in-from-top-2">
+                <div className="flex gap-2 items-start">
+                  <span className="text-lg">💡</span>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed font-medium">
+                    无法自动获取该站点的元数据（可能受到反爬手段保护），建议您手动输入名称和描述。
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div className="flex gap-4">
                 <div className="w-20">
@@ -676,6 +689,7 @@ const App: React.FC = () => {
                         setModalConfig(p => ({ ...p, url: newUrl }));
                         setIconCandidates([]);
                         setIsMetadataLoading(false);
+                        setIsFetchFailed(false);
 
                         // Clear previous debounce and fetch
                         if (metadataDebounceRef.current) clearTimeout(metadataDebounceRef.current);
@@ -698,19 +712,20 @@ const App: React.FC = () => {
                               const controller = new AbortController();
                               metadataFetchRef.current = controller;
 
+                              let metadataResult: any = null;
                               try {
-                                const metadata = await fetchWebsiteMetadata(newUrl, controller.signal);
+                                metadataResult = await fetchWebsiteMetadata(newUrl, controller.signal);
 
-                                if (!controller.signal.aborted && metadata) {
+                                if (!controller.signal.aborted && metadataResult) {
                                   setModalConfig(p => ({
                                     ...p,
-                                    title: !isTitleManuallyEdited ? (metadata.title || p.title) : p.title,
-                                    description: !isDescriptionManuallyEdited ? (metadata.description || p.description) : p.description
+                                    title: !isTitleManuallyEdited ? (metadataResult.title || p.title) : p.title,
+                                    description: !isDescriptionManuallyEdited ? (metadataResult.description || p.description) : p.description
                                   }));
 
                                   const faviconServices = getFaviconUrls(newUrl);
                                   const allCandidates = Array.from(new Set([
-                                    ...(metadata.icons || []),
+                                    ...(metadataResult.icons || []),
                                     ...faviconServices
                                   ])).filter(url => url && url.startsWith('http'));
 
@@ -727,6 +742,9 @@ const App: React.FC = () => {
                               } finally {
                                 if (!controller.signal.aborted) {
                                   setIsMetadataLoading(false);
+                                  if (!metadataResult || (!metadataResult.title && !metadataResult.description)) {
+                                    setIsFetchFailed(true);
+                                  }
                                 }
                               }
                             }
