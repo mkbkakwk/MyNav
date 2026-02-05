@@ -17,18 +17,6 @@ interface CacheEntry {
 const metadataCache = new Map<string, CacheEntry>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-/**
- * Resolves a potentially relative URL against a base URL.
- */
-const resolveUrl = (base: string, relative: string): string => {
-    try {
-        return new URL(relative, base).href;
-    } catch (e) {
-        return relative;
-    }
-};
-
-
 export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSignal): Promise<WebsiteMetadata | null> => {
     // Check cache first
     const cached = metadataCache.get(url);
