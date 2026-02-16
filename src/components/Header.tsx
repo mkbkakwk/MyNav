@@ -510,9 +510,30 @@ const Header: React.FC = () => {
               onFocus={() => { setIsFocused(true); if (inputValue && suggestions.length > 0) setShowSuggestions(true); }}
               onBlur={() => setIsFocused(false)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') { performSearch(activeSuggestionIndex >= 0 ? suggestions[activeSuggestionIndex] : inputValue); setActiveSuggestionIndex(-1); }
-                else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveSuggestionIndex(p => p > -1 ? p - 1 : p); }
-                else if (e.key === 'ArrowDown') { e.preventDefault(); setActiveSuggestionIndex(p => p < suggestions.length - 1 ? p + 1 : p); }
+                if (e.key === 'Enter') {
+                  performSearch(activeSuggestionIndex >= 0 ? suggestions[activeSuggestionIndex] : inputValue);
+                  setActiveSuggestionIndex(-1);
+                }
+                else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(p => {
+                    const newIndex = p > 0 ? p - 1 : (p === 0 ? -1 : -1);
+                    if (newIndex >= 0) {
+                      setInputValue(suggestions[newIndex]);
+                    }
+                    return newIndex;
+                  });
+                }
+                else if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(p => {
+                    const newIndex = p < suggestions.length - 1 ? p + 1 : p;
+                    if (newIndex >= 0 && newIndex < suggestions.length) {
+                      setInputValue(suggestions[newIndex]);
+                    }
+                    return newIndex;
+                  });
+                }
                 else if (e.key === 'Escape') setShowSuggestions(false);
               }}
             />
