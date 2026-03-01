@@ -25,7 +25,7 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
     }
 
     const timeoutController = new AbortController();
-    const timeoutId = setTimeout(() => timeoutController.abort(), 8000); // 8s total maximum
+    const timeoutId = setTimeout(() => timeoutController.abort(), 15000); // 15s total maximum for prod
 
     // Helper to combine external signal and internal timeout
     const getSignal = (internalSignal: AbortSignal) => {
@@ -45,7 +45,7 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
         // 1. PRIMARY: Microlink API (has better anti-scraping capabilities)
         try {
             const mcController = new AbortController();
-            const mcTimeout = setTimeout(() => mcController.abort(), 3000); // 3s timeout
+            const mcTimeout = setTimeout(() => mcController.abort(), 10000); // 10s timeout for scraper
             const signal = getSignal(mcController.signal);
 
             console.log(`[Metadata] Trying Microlink API...`);
@@ -55,7 +55,7 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.status === 'success' && data.data) {
+                if (data.status === 'success' && data.data && (data.data.title || data.data.description)) {
                     const { title, description, logo, image } = data.data;
                     const discoveredIcons: string[] = [];
                     if (logo?.url) discoveredIcons.push(logo.url);
@@ -73,6 +73,8 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
                     metadataCache.set(url, { data: metadata, timestamp: Date.now() });
                     return metadata;
                 }
+            } else {
+                console.warn(`[Metadata] Microlink API returned ${response.status}: ${response.statusText}`);
             }
             clearTimeout(mcTimeout);
         } catch (e: any) {
@@ -80,7 +82,59 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
             console.warn('[Metadata] Microlink failed:', e.message);
         }
 
-        // 2. FALLBACK: Domain-based icon services (for sites with anti-scraping)
+        // 1.5. SECONDARY FALLBACK: AllOrigins + DOMParser
+        // This works if Microlink is rate-limited or blocked for our origin
+        try {
+            console.log(`[Metadata] Trying AllOrigins fallback...`);
+            const aoController = new AbortController();
+            const aoTimeout = setTimeout(() => aoController.abort(), 5000); // 5s timeout
+            const signal = getSignal(aoController.signal);
+
+            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {
+                signal
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const html = data.contents;
+                if (html) {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    const title = doc.querySelector('title')?.textContent ||
+                        doc.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
+                        undefined;
+
+                    const description = doc.querySelector('meta[name="description"]')?.getAttribute('content') ||
+                        doc.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
+                        undefined;
+
+                    const hostname = new URL(url).hostname;
+                    const metadata: WebsiteMetadata = {
+                        title: title?.trim() || undefined,
+                        description: description?.trim() || undefined,
+                        icons: [
+                            `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`,
+                            `https://unavatar.io/${hostname}`
+                        ]
+                    };
+
+                    if (metadata.title || metadata.description) {
+                        console.log(`[Metadata] Success via AllOrigins:`, metadata);
+
+                        clearTimeout(aoTimeout);
+                        clearTimeout(timeoutId);
+                        metadataCache.set(url, { data: metadata, timestamp: Date.now() });
+                        return metadata;
+                    }
+                }
+            }
+            clearTimeout(aoTimeout);
+        } catch (e: any) {
+            console.warn('[Metadata] AllOrigins fallback failed:', e.message);
+        }
+
+        // 2. FINAL FALLBACK: Domain-based icon services (for sites with anti-scraping)
         // These work even when we can't fetch the HTML
         console.log(`[Metadata] Falling back to domain-based icon services...`);
 
