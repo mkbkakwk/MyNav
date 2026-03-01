@@ -117,32 +117,16 @@ const SidebarView: React.FC<SidebarViewProps> = ({
 
 interface SidebarProps {
   externalSections: SectionData[];
+  isCollapsed: boolean;
+  setIsCollapsed: (value: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ externalSections }) => {
+const Sidebar: React.FC<SidebarProps> = ({ externalSections, isCollapsed, setIsCollapsed }) => {
   const [active, setActive] = useState(externalSections[0]?.id || 'fav');
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isManualScroll, setIsManualScroll] = useState(false);
   const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 48, opacity: 0 });
-  const [fixedLeft, setFixedLeft] = useState(0);
 
   const navListRef = useRef<HTMLDivElement>(null);
-  const ghostRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const updatePosition = () => {
-      if (ghostRef.current) {
-        setFixedLeft(ghostRef.current.getBoundingClientRect().left);
-      }
-    };
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    const timeout = setTimeout(updatePosition, 550);
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      clearTimeout(timeout);
-    };
-  }, [isCollapsed]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -219,21 +203,12 @@ const Sidebar: React.FC<SidebarProps> = ({ externalSections }) => {
   };
 
   return (
-    <>
-      <SidebarView
-        {...sharedProps}
-        asideRef={ghostRef}
-        isGhost={true}
-        className="invisible pointer-events-none sticky top-56"
-      />
-      <SidebarView
-        {...sharedProps}
-        navListRef={navListRef}
-        indicatorStyle={indicatorStyle}
-        className="fixed top-56 z-20"
-        style={{ left: fixedLeft }}
-      />
-    </>
+    <SidebarView
+      {...sharedProps}
+      navListRef={navListRef}
+      indicatorStyle={indicatorStyle}
+      className="sticky top-56 z-20"
+    />
   );
 };
 

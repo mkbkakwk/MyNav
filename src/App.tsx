@@ -15,6 +15,7 @@ import { getFaviconUrl, getFaviconUrls } from './utils/favicon';
 import { fetchWebsiteMetadata } from './utils/metadata';
 import Settings from './components/Settings';
 import IconPreview from './components/IconPreview';
+import { useWindowSize } from './hooks/useWindowSize';
 
 
 const Background: React.FC = () => (
@@ -146,6 +147,7 @@ const App: React.FC = () => {
 
   // Sort Mode State
   const [isSortMode, setIsSortMode] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draggedWidth, setDraggedWidth] = useState<number | null>(null);
 
@@ -158,6 +160,30 @@ const App: React.FC = () => {
   const [isInitialLoaded, setIsInitialLoaded] = useState(false);
   const [isFetchFailed, setIsFetchFailed] = useState(false);
   const [iconCandidates, setIconCandidates] = useState<string[]>([]);
+
+  // Window size for dynamic layout
+  const { width: windowWidth } = useWindowSize();
+
+  // Dynamic layout calculations
+  const sidebarExpandedWidth = 256;
+  const sidebarCollapsedWidth = 80;
+  const cardWidth = 260;
+  const minGap = 20;
+  const padding = 48; // px-6 * 2
+  const sidebarToGridGap = 32; // gap-8
+
+  // Rule 1: Calculate max columns based on 2/3 of screen width and EXPANDED sidebar
+  const targetWidthForGrid = (windowWidth * (2 / 3)) - sidebarExpandedWidth - sidebarToGridGap - padding;
+  const numCols = Math.max(1, Math.ceil((targetWidthForGrid + minGap) / (cardWidth + minGap)));
+
+  // Rule 2: Container width should be centered and respect 2/3 ratio or content width
+  const gridWidthAtMinGap = numCols * cardWidth + (numCols - 1) * minGap;
+  const containerMaxWidth = Math.max(windowWidth * (2 / 3), gridWidthAtMinGap + sidebarExpandedWidth + sidebarToGridGap + padding);
+
+  // Rule 3: Calculate dynamic gap to keep column count same when sidebar collapses
+  const currentSidebarWidth = isCollapsed ? sidebarCollapsedWidth : sidebarExpandedWidth;
+  const availableGridWidth = containerMaxWidth - currentSidebarWidth - sidebarToGridGap - padding;
+  const dynamicGap = numCols > 1 ? (availableGridWidth - numCols * cardWidth) / (numCols - 1) : minGap;
 
   // Sync & Persistence Refs
   const syncTimerRef = React.useRef<any>(null);
@@ -409,8 +435,15 @@ const App: React.FC = () => {
       <Background />
       <Header />
 
-      <div className="relative z-10 flex max-w-[1800px] mx-auto px-6 pb-40 gap-8 pt-[340px]">
-        <Sidebar externalSections={sections} />
+      <div
+        className="relative z-10 flex mx-auto px-6 pb-40 gap-8 pt-[340px] transition-all duration-500"
+        style={{ maxWidth: `${containerMaxWidth}px` }}
+      >
+        <Sidebar
+          externalSections={sections}
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+        />
 
         <main className="flex-1 min-w-0 space-y-12">
           <DndContext
@@ -453,7 +486,13 @@ const App: React.FC = () => {
                     </div>
                   </SortableWrapper>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 min-h-[50px]">
+                  <div
+                    className="grid min-h-[50px]"
+                    style={{
+                      gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))`,
+                      gap: `${dynamicGap}px`
+                    }}
+                  >
                     <SortableContext items={section.items.map(i => i.id)} strategy={horizontalListSortingStrategy}>
                       {section.items.map((item, index) => (
                         <SortableWrapper key={item.id} id={item.id} disabled={!isSortMode}>
