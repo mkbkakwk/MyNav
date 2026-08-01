@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, Plus, Edit2, Trash2 } from 'lucide-react';
@@ -148,19 +148,12 @@ const nextColor = (engines: SearchEngine[]): string => {
     return AVAILABLE_COLORS.find(c => !used.has(c)) || AVAILABLE_COLORS[0];
 };
 
-// Fixed gap between the categories and the search bar (must match the JSX mt-6).
-const BAR_GAP = 24;
-
 const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
     const [query, setQuery] = useState('');
     const [categories, setCategories] = useState<SearchCategory[]>([]);
     const [activeCategory, setActiveCategory] = useState('');
     const [selected, setSelected] = useState<SearchEngine | null>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
-    // Computed top padding that keeps the search bar's midline at 50% of the
-    // viewport. Categories sit above the bar, engines below — the whole group
-    // is laid out in normal flow around the centered bar.
-    const [padTop, setPadTop] = useState(0);
     // Add / edit category-engine dialog state (add or edit, prefilled in edit mode)
     const [editor, setEditor] = useState<null | { mode: 'add' | 'edit'; type: 'category' | 'engine'; name?: string; url?: string }>(null);
     const [newName, setNewName] = useState('');
@@ -197,32 +190,10 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
         }
     }, []);
 
-    // Center the bar in the VISIBLE area: when the keyboard pops, visualViewport
-    // shrinks and the bar rides up so it is never hidden behind the IME.
-    useLayoutEffect(() => {
-        const update = () => {
-            const bar = barRef.current;
-            const cat = catRef.current;
-            if (!bar || !cat) return;
-            const barH = bar.offsetHeight;
-            const catH = cat.offsetHeight;
-            const vv = window.visualViewport;
-            // Visible-area center: keyboard up → top+height/2 sits above the IME.
-            const centerY = vv ? vv.top + vv.height / 2 : window.innerHeight / 2;
-            const pt = Math.max(8, centerY - barH / 2 - catH - BAR_GAP);
-            setPadTop(pt);
-        };
-        update();
-        const ro = new ResizeObserver(update);
-        if (barRef.current) ro.observe(barRef.current);
-        if (catRef.current) ro.observe(catRef.current);
-        window.addEventListener('resize', update);
-        window.visualViewport?.addEventListener('resize', update);
-        return () => {
-            ro.disconnect();
-            window.removeEventListener('resize', update);
-            window.visualViewport?.removeEventListener('resize', update);
-        };
+    // Auto focus on tab switch (keyboard pops up).
+    useEffect(() => {
+        const t = setTimeout(() => inputRef.current?.focus(), 300);
+        return () => clearTimeout(t);
     }, []);
 
     const activeEngines = categories.find(c => c.name === activeCategory)?.engines || [];
@@ -355,9 +326,8 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
 
     return (
         <div className="px-4 pt-6 pb-10 max-w-3xl mx-auto">
-            {/* One group in normal flow: categories → search bar → engines.
-                padTop (computed) keeps the search bar's midline at screen center. */}
-            <div className="flex flex-col" style={{ paddingTop: padTop }}>
+            {/* One group in normal flow from the top: categories → search bar → engines */}
+            <div className="flex flex-col">
                 {/* Categories: the + button stays visible even when empty */}
                 <div ref={catRef}>
                     <div className="flex gap-2 flex-wrap justify-center">
@@ -393,7 +363,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                     </div>
                 </div>
 
-                {/* Search bar (midline centered by the computed padTop) */}
+                {/* Search bar (normal flow, right below the categories) */}
                 <div ref={barRef} className="mt-6">
                     <div className={`relative flex flex-col overflow-hidden ${suggestions.length > 0 ? 'rounded-2xl' : 'rounded-full'} bg-white/95 dark:bg-slate-900/80 shadow-pill dark:shadow-pill-dark transition-[background-color,box-shadow,backdrop-filter] duration-300 focus-within:ring-4 ${getFocusRing(selected?.color)} focus-within:shadow-2xl`}>
                         <div className="relative flex items-center w-full">
