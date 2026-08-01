@@ -177,13 +177,15 @@ const App: React.FC = () => {
   const padding = 48; // px-6 * 2
   const sidebarToGridGap = 32; // gap-8
 
-  // Rule 1: Calculate max columns based on 2/3 of screen width and EXPANDED sidebar
-  const targetWidthForGrid = (windowWidth * (2 / 3)) - sidebarExpandedWidth - sidebarToGridGap - padding;
+  // Rule 1: Calculate max columns based on 92% of screen width,
+  // so high-DPI screens don't waste huge side margins (was 2/3).
+  const usableWidth = windowWidth * 0.92;
+  const targetWidthForGrid = usableWidth - sidebarExpandedWidth - sidebarToGridGap - padding;
   const numCols = Math.max(1, Math.ceil((targetWidthForGrid + minGap) / (cardWidth + minGap)));
 
-  // Rule 2: Container width should be centered and respect 2/3 ratio or content width
+  // Rule 2: Container width should be centered and respect usable width or content width
   const gridWidthAtMinGap = numCols * cardWidth + (numCols - 1) * minGap;
-  const containerMaxWidth = Math.max(windowWidth * (2 / 3), gridWidthAtMinGap + sidebarExpandedWidth + sidebarToGridGap + padding);
+  const containerMaxWidth = Math.max(usableWidth, gridWidthAtMinGap + sidebarExpandedWidth + sidebarToGridGap + padding);
 
   // Rule 3: Calculate dynamic gap to keep column count same when sidebar collapses
   const currentSidebarWidth = isCollapsed ? sidebarCollapsedWidth : sidebarExpandedWidth;
