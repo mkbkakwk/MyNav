@@ -197,14 +197,8 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
         }
     }, []);
 
-    useEffect(() => {
-        // Auto focus the input when the tab opens.
-        const t = setTimeout(() => inputRef.current?.focus(), 300);
-        return () => clearTimeout(t);
-    }, []);
-
-    // Compute padding so the search bar's midline sits exactly at viewport 50%.
-    // Recomputes when the bar grows (suggestions open) or the viewport resizes.
+    // Center the bar in the VISIBLE area: when the keyboard pops, visualViewport
+    // shrinks and the bar rides up so it is never hidden behind the IME.
     useLayoutEffect(() => {
         const update = () => {
             const bar = barRef.current;
@@ -212,9 +206,10 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
             if (!bar || !cat) return;
             const barH = bar.offsetHeight;
             const catH = cat.offsetHeight;
-            // barTop + barH/2 = innerHeight/2  →  barTop = innerHeight/2 - barH/2
-            // barTop = padTop + catH + BAR_GAP
-            const pt = Math.max(8, window.innerHeight / 2 - barH / 2 - catH - BAR_GAP);
+            const vv = window.visualViewport;
+            // Visible-area center: keyboard up → top+height/2 sits above the IME.
+            const centerY = vv ? vv.top + vv.height / 2 : window.innerHeight / 2;
+            const pt = Math.max(8, centerY - barH / 2 - catH - BAR_GAP);
             setPadTop(pt);
         };
         update();
@@ -222,9 +217,11 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
         if (barRef.current) ro.observe(barRef.current);
         if (catRef.current) ro.observe(catRef.current);
         window.addEventListener('resize', update);
+        window.visualViewport?.addEventListener('resize', update);
         return () => {
             ro.disconnect();
             window.removeEventListener('resize', update);
+            window.visualViewport?.removeEventListener('resize', update);
         };
     }, []);
 
@@ -406,7 +403,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleEngineSearch()}
-                                className="w-full pl-11 pr-24 py-4 bg-transparent border-none text-xs text-slate-800 dark:text-slate-100 focus:ring-0 outline-none"
+                                className="w-full pl-11 pr-24 py-4 bg-transparent border-none text-base text-slate-800 dark:text-slate-100 focus:ring-0 outline-none"
                             />
                             {query && (
                                 <button onClick={() => { setQuery(''); setSuggestions([]); }} className="absolute right-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
