@@ -238,8 +238,10 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
     };
 
     // Live suggestions from the selected engine's source (debounced 200ms),
-    // same logic as the desktop header.
+    // same logic as the desktop header. A `cancelled` flag drops stale JSONP
+    // responses so clearing the input can never be reverted by a late reply.
     useEffect(() => {
+        let cancelled = false;
         const timer = setTimeout(async () => {
             const q0 = query.trim();
             if (!q0 || !selected) return setSuggestions([]);
@@ -252,13 +254,14 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                 else if (source === '360' || source === 'bing') { url = `https://sug.so.360.cn/suggest?word=${encodeURIComponent(q0)}&encodein=utf-8&encodeout=utf-8`; }
                 else return setSuggestions([]);
                 const data = await fetchJsonp(url, callbackParam);
+                if (cancelled) return; // stale response — query changed or cleared
                 const results = source === 'google' ? data[1] : data.s || [];
                 setSuggestions(results.slice(0, 8));
             } catch {
-                setSuggestions([]);
+                if (!cancelled) setSuggestions([]);
             }
         }, 200);
-        return () => clearTimeout(timer);
+        return () => { clearTimeout(timer); cancelled = true; };
     }, [query, selected]);
 
     const q = query.trim().toLowerCase();
@@ -374,7 +377,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                                 onMouseDown={() => startChipPress(() => setChipMenu({ type: 'category', name: cat.name }))}
                                 onMouseUp={clearChipPress}
                                 onMouseLeave={clearChipPress}
-                                className={`shrink-0 px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 active:scale-95 select-none ${
+                                className={`shrink-0 px-4 py-2 rounded-xl whitespace-nowrap text-xs transition-all duration-300 active:scale-95 select-none ${
                                     activeCategory === cat.name
                                         ? 'text-primary bg-primary/10 font-bold shadow-sm ring-1 ring-primary/20 scale-105'
                                         : 'text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80'
@@ -403,10 +406,10 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleEngineSearch()}
-                                className="w-full pl-11 pr-24 py-4 bg-transparent border-none text-lg text-slate-800 dark:text-slate-100 focus:ring-0 outline-none"
+                                className="w-full pl-11 pr-24 py-4 bg-transparent border-none text-xs text-slate-800 dark:text-slate-100 focus:ring-0 outline-none"
                             />
                             {query && (
-                                <button onClick={() => setQuery('')} className="absolute right-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <button onClick={() => { setQuery(''); setSuggestions([]); }} className="absolute right-16 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                     <X size={18} />
                                 </button>
                             )}
@@ -437,7 +440,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                                                 animate={{ x: 0, opacity: 1 }}
                                                 transition={{ delay: i * 0.03 }}
                                                 onClick={() => { setQuery(s); handleEngineSearch(s); }}
-                                                className="w-full text-left px-8 py-3 cursor-pointer flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                className="w-full text-left px-8 py-3 cursor-pointer flex items-center gap-3 text-xs transition-colors text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                                             >
                                                 <SearchIcon size={16} className="opacity-50 shrink-0" />
                                                 <span className="truncate">{s}</span>
@@ -469,7 +472,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                                         onMouseDown={() => startChipPress(() => setChipMenu({ type: 'engine', name: engine.name }))}
                                         onMouseUp={clearChipPress}
                                         onMouseLeave={clearChipPress}
-                                        className={`shrink-0 px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 active:scale-95 flex items-center gap-2 relative select-none ${
+                                        className={`shrink-0 px-4 py-2 rounded-xl whitespace-nowrap text-xs transition-all duration-300 active:scale-95 flex items-center gap-2 relative select-none ${
                                             isSelected
                                                 ? `bg-white dark:bg-slate-700 shadow-md ring-2 ${engineTheme.ring} ${engineTheme.text} font-bold scale-105`
                                                 : 'bg-white/40 dark:bg-slate-800/40 text-slate-500'
