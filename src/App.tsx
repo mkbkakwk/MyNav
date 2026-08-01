@@ -152,7 +152,6 @@ const App: React.FC = () => {
 
   // Sort Mode State
   const [isSortMode, setIsSortMode] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draggedWidth, setDraggedWidth] = useState<number | null>(null);
 
@@ -171,7 +170,6 @@ const App: React.FC = () => {
 
   // Dynamic layout calculations
   const sidebarExpandedWidth = 256;
-  const sidebarCollapsedWidth = 80;
   const cardWidth = 260;
   const minGap = 20;
   const padding = 48; // px-6 * 2
@@ -187,8 +185,8 @@ const App: React.FC = () => {
   const gridWidthAtMinGap = numCols * cardWidth + (numCols - 1) * minGap;
   const containerMaxWidth = Math.max(usableWidth, gridWidthAtMinGap + sidebarExpandedWidth + sidebarToGridGap + padding);
 
-  // Rule 3: Calculate dynamic gap to keep column count same when sidebar collapses
-  const currentSidebarWidth = isCollapsed ? sidebarCollapsedWidth : sidebarExpandedWidth;
+  // Rule 3: Calculate dynamic gap based on the (always expanded) sidebar width
+  const currentSidebarWidth = sidebarExpandedWidth;
   const availableGridWidth = containerMaxWidth - currentSidebarWidth - sidebarToGridGap - padding;
   const dynamicGap = numCols > 1 ? (availableGridWidth - numCols * cardWidth) / (numCols - 1) : minGap;
 
@@ -487,8 +485,6 @@ const App: React.FC = () => {
       >
         <Sidebar
           externalSections={sections}
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
         />
 
         <main className="flex-1 min-w-0 space-y-12">

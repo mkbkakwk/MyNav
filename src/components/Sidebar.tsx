@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft } from 'lucide-react';
 import { smoothScrollTo } from '../utils/scroll';
 import type { SectionData } from '../types';
 
 interface SidebarViewProps {
   active: string;
-  isCollapsed: boolean;
-  setIsCollapsed: (value: boolean) => void;
   handleNavClick: (e: React.MouseEvent<HTMLAnchorElement>, id: string) => void;
   sections: SectionData[];
   indicatorStyle?: { top: number; height: number; opacity: number };
@@ -19,8 +16,6 @@ interface SidebarViewProps {
 
 const SidebarView: React.FC<SidebarViewProps> = ({
   active,
-  isCollapsed,
-  setIsCollapsed,
   handleNavClick,
   sections,
   indicatorStyle,
@@ -68,19 +63,13 @@ const SidebarView: React.FC<SidebarViewProps> = ({
                   ? 'text-indigo-600 dark:text-indigo-300'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-700/60 hover:text-primary'
                   } ${index === 0 ? 'mb-6' : ''}`}
-                title={isCollapsed ? item.title : undefined}
                 tabIndex={isGhost ? -1 : 0}
               >
                 <span className={`flex items-center justify-center w-6 h-6 shrink-0 transition-transform duration-300 ${active === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
                   <span className="text-xl leading-none select-none">{item.icon}</span>
                 </span>
 
-                <span
-                  className={`whitespace-nowrap overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isCollapsed
-                    ? 'max-w-0 opacity-0 ml-0'
-                    : 'max-w-[300px] opacity-100 ml-3'
-                    }`}
-                >
+                <span className="whitespace-nowrap overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] max-w-[300px] opacity-100 ml-3">
                   <span className={`block font-medium ${index === 0 ? 'text-base font-bold' : 'text-sm'}`}>
                     {item.title}
                   </span>
@@ -90,26 +79,6 @@ const SidebarView: React.FC<SidebarViewProps> = ({
           </div>
         </div>
 
-        <div className="mt-auto pt-4 border-t border-slate-200/50 dark:border-slate-700/50 w-full flex justify-center z-10 relative bg-inherit">
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="group flex items-center justify-center w-full py-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all duration-300"
-            tabIndex={isGhost ? -1 : 0}
-          >
-            <div className={`transition-transform duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isCollapsed ? 'rotate-180' : 'rotate-0'}`}>
-              <ChevronLeft size={20} />
-            </div>
-
-            <span
-              className={`whitespace-nowrap overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] text-xs font-medium ${isCollapsed
-                ? 'max-w-0 opacity-0 ml-0'
-                : 'max-w-[100px] opacity-100 ml-2'
-                }`}
-            >
-              收起导航
-            </span>
-          </button>
-        </div>
       </nav>
     </aside>
   );
@@ -117,11 +86,9 @@ const SidebarView: React.FC<SidebarViewProps> = ({
 
 interface SidebarProps {
   externalSections: SectionData[];
-  isCollapsed: boolean;
-  setIsCollapsed: (value: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ externalSections, isCollapsed, setIsCollapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ externalSections }) => {
   const [active, setActive] = useState(externalSections[0]?.id || 'fav');
   const [isManualScroll, setIsManualScroll] = useState(false);
   const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 48, opacity: 0 });
@@ -175,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ externalSections, isCollapsed, setIsC
       clearTimeout(timeout);
       window.removeEventListener('resize', updateIndicator);
     };
-  }, [active, isCollapsed, externalSections]);
+  }, [active, externalSections]);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -196,8 +163,6 @@ const Sidebar: React.FC<SidebarProps> = ({ externalSections, isCollapsed, setIsC
 
   const sharedProps = {
     active,
-    isCollapsed,
-    setIsCollapsed,
     handleNavClick,
     sections: externalSections
   };
