@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Home, Search, Settings as SettingsIcon } from 'lucide-react';
 
 export type MobileTab = 'home' | 'search' | 'settings';
@@ -14,28 +15,41 @@ const TABS: { key: MobileTab; label: string; icon: React.ElementType }[] = [
     { key: 'settings', label: '设置', icon: SettingsIcon },
 ];
 
+/**
+ * iPhone-Dock-style floating pill. The icons never move; the elliptical
+ * selection background glides between tabs via framer-motion layoutId.
+ */
 const MobileTabBar: React.FC<MobileTabBarProps> = ({ active, onChange }) => (
     <nav
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border-t border-slate-200/60 dark:border-slate-700/50
-            landscape:left-1/2 landscape:right-auto landscape:bottom-3 landscape:-translate-x-1/2 landscape:w-auto landscape:rounded-full
-            landscape:border landscape:border-slate-200/60 dark:landscape:border-slate-700/50 landscape:shadow-xl"
-        style={{
-            paddingBottom: 'env(safe-area-inset-bottom)',
-            paddingLeft: 'env(safe-area-inset-left)',
-            paddingRight: 'env(safe-area-inset-right)',
-        }}
+        className="fixed left-1/2 -translate-x-1/2 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-full shadow-xl border border-white/40 dark:border-white/10"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}
     >
-        <div className="flex">
-            {TABS.map(t => (
-                <button
-                    key={t.key}
-                    onClick={() => onChange(t.key)}
-                    className={`flex-1 py-2.5 px-5 flex flex-col items-center gap-0.5 text-xs font-medium transition-colors landscape:py-2 landscape:px-4 ${active === t.key ? 'text-indigo-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-                >
-                    <t.icon size={22} />
-                    <span className="landscape:hidden">{t.label}</span>
-                </button>
-            ))}
+        <div className="relative flex items-center gap-4 px-2.5 py-1 overflow-hidden">
+            {TABS.map(t => {
+                const isActive = active === t.key;
+                return (
+                    <button
+                        key={t.key}
+                        onClick={() => onChange(t.key)}
+                        aria-label={t.label}
+                        className="relative w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                    >
+                        {isActive && (
+                            <motion.div
+                                layoutId="tab-pill"
+                                transition={{ type: 'tween', duration: 0.45, ease: [0.68, -0.55, 0.265, 1.55] }}
+                                className="absolute -inset-x-1 inset-y-0.5 rounded-full bg-primary/10 ring-1 ring-primary/20 shadow-sm"
+                            />
+                        )}
+                        <t.icon
+                            size={18}
+                            className={`relative z-10 transition-colors ${
+                                isActive ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400'
+                            }`}
+                        />
+                    </button>
+                );
+            })}
         </div>
     </nav>
 );

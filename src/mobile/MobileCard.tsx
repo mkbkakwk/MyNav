@@ -8,9 +8,10 @@ interface MobileCardProps {
 }
 
 /**
- * Compact mobile card: vertical layout (icon on top, title, two-line
- * description). Tap opens the link, long-press (400ms) opens the edit sheet.
- * A long-press suppresses the following click.
+ * Compact mobile card: icon left, title right, one-line description below.
+ * Rendered immediately visible (no entrance animation — mobile first paint
+ * must be fast). Tap opens the link, long-press (400ms) opens the edit sheet;
+ * a long-press suppresses the following click.
  */
 const MobileCard: React.FC<MobileCardProps> = ({ card, onLongPress }) => {
     const longPressed = useRef(false);
@@ -21,8 +22,7 @@ const MobileCard: React.FC<MobileCardProps> = ({ card, onLongPress }) => {
         timer.current = setTimeout(() => {
             longPressed.current = true;
             onLongPress();
-            // Force-reset shortly after, so the next tap is never swallowed
-            // (the follow-up click consumes the flag if it fires first).
+            // Force-reset shortly after, so the next tap is never swallowed.
             setTimeout(() => { longPressed.current = false; }, 350);
         }, 400);
     };

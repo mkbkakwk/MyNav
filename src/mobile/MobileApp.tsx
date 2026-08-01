@@ -34,7 +34,7 @@ const MobileApp: React.FC<MobileAppProps> = ({
     const [settingsOpen, setSettingsOpen] = useState(false);
 
     return (
-        <div className="relative min-h-screen pb-24 landscape:pb-16 text-slate-900 dark:text-white">
+        <div className="relative min-h-screen pb-16 landscape:pb-14 text-slate-900 dark:text-white">
             <MobileBackground />
 
             <div className="relative z-10">

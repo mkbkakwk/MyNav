@@ -35,4 +35,11 @@ const sourceSyncPlugin = () => ({
 export default defineConfig({
   base: '/MyNav/',
   plugins: [tailwindcss(), react(), sourceSyncPlugin()],
+  server: {
+    port: 5173,
+  },
+  // Pre-bundle heavy deps so the first dev visit doesn't stall on compilation.
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'framer-motion', 'lucide-react', '@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+  },
 })
