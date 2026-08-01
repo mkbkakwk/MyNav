@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Settings as SettingsIcon, ChevronRight, Github } from 'lucide-react';
+import { ChevronRight, Github } from 'lucide-react';
 import type { SectionData, SyncSettings } from '../types';
 import MobileHome from './MobileHome';
 import MobileSearch from './MobileSearch';

@@ -324,7 +324,7 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
             setActiveCategory(newName.trim());
             setSelected(null);
         }
-        if (editor.type === 'engine' && editor.mode === 'edit' && selected?.name === editor.name) {
+        if (editor.type === 'engine' && editor.mode === 'edit' && selected && selected.name === editor.name) {
             setSelected({ ...selected, name: newName.trim(), url: newUrl.trim() });
         }
         setEditor(null);
