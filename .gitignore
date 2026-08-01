@@ -26,3 +26,6 @@ dist-ssr
 # Reasonix tooling
 .reasonix/
 reasonix.toml
+
+# Local dev documentation (AI context, not part of the product)
+AI_CONTEXT.md
