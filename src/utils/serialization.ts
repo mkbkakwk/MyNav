@@ -113,10 +113,25 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
 };
 
 /**
+ * Result of fetching remote data. Three distinct states:
+ * - ok + data:      remote data loaded successfully → remote is the source of truth
+ * - ok + notFound:  remote file does not exist yet (404) → first-use confirmed, safe to seed
+ * - ok=false + error: network / auth failure → must NOT be treated as "remote is empty"
+ */
+export interface RemoteDataResult {
+    ok: boolean;
+    notFound?: boolean;
+    data?: { sections: SectionData[]; categories: Category[] };
+    error?: string;
+}
+
+/**
  * Fetches data from the remote private repository.
  */
-export const fetchRemoteData = async (settings: SyncSettings): Promise<{ sections: SectionData[], categories: Category[] } | null> => {
-    if (!settings.enabled || !settings.token || !settings.owner || !settings.repo) return null;
+export const fetchRemoteData = async (settings: SyncSettings): Promise<RemoteDataResult> => {
+    if (!settings.enabled || !settings.token || !settings.owner || !settings.repo) {
+        return { ok: false, error: '同步配置不完整' };
+    }
 
     try {
         const filePath = 'nav-data.json';
@@ -128,20 +143,24 @@ export const fetchRemoteData = async (settings: SyncSettings): Promise<{ section
 
         const response = await fetch(apiUrl, { headers });
         if (response.status === 404) {
-            console.log('远程数据文件尚未创建。');
-            return null;
+            console.log('远程数据文件尚未创建(404),可安全播种。');
+            return { ok: true, notFound: true };
         }
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message);
+            let message = `HTTP ${response.status}`;
+            try {
+                const err = await response.json();
+                message = err.message || message;
+            } catch { /* keep default message */ }
+            throw new Error(message);
         }
 
         const data = await response.json();
         const content = decodeURIComponent(escape(atob(data.content)));
-        return JSON.parse(content);
+        return { ok: true, data: JSON.parse(content) };
     } catch (err: any) {
         console.error('获取远程数据失败:', err.message);
-        return null;
+        return { ok: false, error: err.message };
     }
 };

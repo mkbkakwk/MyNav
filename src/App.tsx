@@ -145,6 +145,11 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : { token: '', owner: '', repo: '', enabled: false };
   });
 
+  // Sync Authorization Gate: cloud uploads are only allowed AFTER the user
+  // explicitly chose "pull remote" / "keep local" (or remote was confirmed empty).
+  // Prevents first-time setup from overwriting remote data with local template data.
+  const [syncAuthorized, setSyncAuthorized] = useState(false);
+
   // Sort Mode State
   const [isSortMode, setIsSortMode] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -190,6 +195,36 @@ const App: React.FC = () => {
   const metadataFetchRef = React.useRef<AbortController | null>(null);
   const metadataDebounceRef = React.useRef<any>(null);
 
+  /**
+   * Shared remote-data loader. On success (or confirmed 404) it authorizes cloud
+   * uploads; on network/auth failure it does NOT authorize, so local data can
+   * never silently overwrite a remote file we failed to read.
+   */
+  const loadRemoteData = async (settings: SyncSettings): Promise<{ ok: boolean; message: string }> => {
+    const result = await fetchRemoteData(settings);
+    if (result.ok && result.data) {
+      setSections(result.data.sections);
+      localStorage.setItem('nav_search_categories_v2', JSON.stringify(result.data.categories));
+      window.dispatchEvent(new CustomEvent('nav_search_remote_synced', { detail: result.data.categories }));
+      setSyncAuthorized(true);
+      return { ok: true, message: `拉取成功,已载入 ${result.data.sections.length} 个分区` };
+    }
+    if (result.ok && result.notFound) {
+      // Remote file does not exist yet → first use confirmed, safe to seed.
+      setSyncAuthorized(true);
+      return { ok: true, message: '远程仓库还没有数据,当前页面数据将作为首次上传' };
+    }
+    return { ok: false, message: result.error || '拉取失败,请检查网络或 Token 配置' };
+  };
+
+  const handlePullRemote = async () => {
+    return loadRemoteData(syncSettings);
+  };
+
+  const handleKeepLocal = () => {
+    setSyncAuthorized(true);
+  };
+
   // Persistence & Source Sync
   useEffect(() => {
     // 1. Immediate Local Storage Update
@@ -201,8 +236,8 @@ const App: React.FC = () => {
       const categories = JSON.parse(categoriesJson);
       const sourceCode = serializeConstants(sections, categories);
 
-      // 2. Debounced Cloud Sync (2 Seconds)
-      if (syncSettings.enabled && isInitialLoaded) {
+      // 2. Debounced Cloud Sync (2 Seconds) — only after explicit user authorization
+      if (syncSettings.enabled && isInitialLoaded && syncAuthorized) {
         if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
         syncTimerRef.current = setTimeout(() => {
           saveToSource(sourceCode, syncSettings, sections, categories);
@@ -213,19 +248,25 @@ const App: React.FC = () => {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [sections, syncSettings]);
+  }, [sections, syncSettings, syncAuthorized]);
 
   // Initial Remote Data Sync
   useEffect(() => {
     const initRemoteData = async () => {
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       if (!isLocal && syncSettings.enabled) {
-        const remoteData = await fetchRemoteData(syncSettings);
-        if (remoteData) {
-          setSections(remoteData.sections);
-          localStorage.setItem('nav_search_categories_v2', JSON.stringify(remoteData.categories));
-          window.dispatchEvent(new CustomEvent('nav_search_remote_synced', { detail: remoteData.categories }));
+        const result = await fetchRemoteData(syncSettings);
+        if (result.ok && result.data) {
+          setSections(result.data.sections);
+          localStorage.setItem('nav_search_categories_v2', JSON.stringify(result.data.categories));
+          window.dispatchEvent(new CustomEvent('nav_search_remote_synced', { detail: result.data.categories }));
+          // Remote data loaded → uploads are safe from now on.
+          setSyncAuthorized(true);
+        } else if (result.ok && result.notFound) {
+          // Remote confirmed empty → first use, safe to seed on next edit.
+          setSyncAuthorized(true);
         }
+        // Other failures: do NOT authorize — user must act via Settings UI.
       }
       setIsInitialLoaded(true);
     };
@@ -239,12 +280,15 @@ const App: React.FC = () => {
       if (categoriesJson) {
         const categories = JSON.parse(categoriesJson);
         const sourceCode = serializeConstants(sections, categories);
-        saveToSource(sourceCode, syncSettings, sections, categories);
+        // Local mode (enabled=false) always saves; cloud upload requires authorization.
+        if (!syncSettings.enabled || syncAuthorized) {
+          saveToSource(sourceCode, syncSettings, sections, categories);
+        }
       }
     };
     window.addEventListener('nav_search_updated', handleHeaderUpdate);
     return () => window.removeEventListener('nav_search_updated', handleHeaderUpdate);
-  }, [sections, syncSettings]);
+  }, [sections, syncSettings, syncAuthorized]);
 
   // Click outside listener for context menu
   useEffect(() => {
@@ -874,6 +918,9 @@ const App: React.FC = () => {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onSettingsChange={setSyncSettings}
+        onPullRemote={handlePullRemote}
+        onKeepLocal={handleKeepLocal}
+        syncAuthorized={syncAuthorized}
       />
 
       {isSortMode && (
