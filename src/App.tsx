@@ -16,6 +16,8 @@ import { fetchWebsiteMetadata } from './utils/metadata';
 import Settings from './components/Settings';
 import IconPreview from './components/IconPreview';
 import { useWindowSize } from './hooks/useWindowSize';
+import { useIsMobile } from './hooks/useIsMobile';
+import MobileApp from './mobile/MobileApp';
 
 
 const Background: React.FC = () => (
@@ -473,6 +475,22 @@ const App: React.FC = () => {
     });
     setDeleteConfig(null);
   };
+
+  // Mobile viewport → render the dedicated app-style mobile UI.
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return (
+      <MobileApp
+        sections={sections}
+        setSections={setSections}
+        syncSettings={syncSettings}
+        setSyncSettings={setSyncSettings}
+        onPullRemote={handlePullRemote}
+        onKeepLocal={handleKeepLocal}
+        syncAuthorized={syncAuthorized}
+      />
+    );
+  }
 
   return (
     <>
