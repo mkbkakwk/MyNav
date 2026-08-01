@@ -333,13 +333,15 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
 
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), TOTAL_TIMEOUT);
+    // Combined signal: external cancellation (e.g. dialog closed) OR internal timeout.
+    const signal = mergeSignals(externalSignal, timeoutController.signal);
 
     try {
         // Fire every source in parallel — first usable result wins the tier order.
         const [microlink, htmlFetch, jina] = await Promise.all([
-            fetchMicrolink(url, timeoutController.signal),
-            fetchHtmlParallel(url, timeoutController.signal),
-            fetchJina(url, timeoutController.signal),
+            fetchMicrolink(url, signal),
+            fetchHtmlParallel(url, signal),
+            fetchJina(url, signal),
         ]);
 
         if (microlink) {
@@ -365,7 +367,7 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
 
             // No title/description from HTML — ask the site's own structured
             // endpoints (oEmbed / RSS) before giving up on the content.
-            const structured = await fetchStructured(url, html, timeoutController.signal);
+            const structured = await fetchStructured(url, html, signal);
             if (structured) {
                 console.log(`[Metadata] Success via oEmbed/RSS (${htmlFetch.source})`);
                 setCached(url, structured, 'full');
