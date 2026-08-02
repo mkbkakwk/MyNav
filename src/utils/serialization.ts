@@ -1,4 +1,5 @@
 import type { SectionData, Category, SyncSettings } from '../types';
+import type { ClickStats } from './clickStats';
 
 /**
  * Converts current application state into a clean TypeScript source file string.
@@ -34,15 +35,16 @@ export const SECTIONS: SectionData[] = ${JSON.stringify(sections, null, 2)};
 
 /**
  * Converts state to a simple JSON object for cloud storage.
+ * Stats are included so click statistics roam with the data.
  */
-export const serializeToJson = (sections: SectionData[], categories: Category[]) => {
-    return JSON.stringify({ sections, categories }, null, 2);
+export const serializeToJson = (sections: SectionData[], categories: Category[], stats?: ClickStats) => {
+    return JSON.stringify({ sections, categories, stats: stats || {} }, null, 2);
 };
 
 /**
  * Utility to send updated content to either the local Vite bridge or GitHub API.
  */
-export const saveToSource = async (content: string, settings?: SyncSettings, sections?: SectionData[], categories?: Category[]) => {
+export const saveToSource = async (content: string, settings?: SyncSettings, sections?: SectionData[], categories?: Category[], stats?: ClickStats) => {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
     // 1. Local Persistence (Vite Bridge)
@@ -73,7 +75,7 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
                 'Content-Type': 'application/json'
             };
 
-            const jsonData = serializeToJson(sections, categories);
+            const jsonData = serializeToJson(sections, categories, stats);
 
             // 1. Force fetch the LATEST SHA every time to prevent Mismatch errors
             let latestSha = '';
@@ -121,7 +123,7 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
 export interface RemoteDataResult {
     ok: boolean;
     notFound?: boolean;
-    data?: { sections: SectionData[]; categories: Category[] };
+    data?: { sections: SectionData[]; categories: Category[]; stats?: ClickStats };
     error?: string;
 }
 

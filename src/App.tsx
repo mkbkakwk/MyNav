@@ -13,8 +13,8 @@ import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon, ListOrd
 import { serializeConstants, saveToSource, fetchRemoteData } from './utils/serialization';
 import { getFaviconUrl, getFaviconUrls } from './utils/favicon';
 import { fetchWebsiteMetadata } from './utils/metadata';
-import { sortSections, getSortMode, setSortMode, nextSortMode } from './utils/clickStats';
-import type { SortMode } from './utils/clickStats';
+import { sortSections, getSortMode, setSortMode, nextSortMode, getStats, applyStats } from './utils/clickStats';
+import type { SortMode, ClickStats } from './utils/clickStats';
 import Settings from './components/Settings';
 import IconPreview from './components/IconPreview';
 import { useWindowSize } from './hooks/useWindowSize';
@@ -209,6 +209,7 @@ const App: React.FC = () => {
     const result = await fetchRemoteData(settings);
     if (result.ok && result.data) {
       setSections(result.data.sections);
+      if (result.data.stats) { setStats(result.data.stats); applyStats(result.data.stats); }
       localStorage.setItem('nav_search_categories_v2', JSON.stringify(result.data.categories));
       window.dispatchEvent(new CustomEvent('nav_search_remote_synced', { detail: result.data.categories }));
       setSyncAuthorized(true);
@@ -245,7 +246,7 @@ const App: React.FC = () => {
       if (syncSettings.enabled && isInitialLoaded && syncAuthorized) {
         if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
         syncTimerRef.current = setTimeout(() => {
-          saveToSource(sourceCode, syncSettings, sections, categories);
+          saveToSource(sourceCode, syncSettings, sections, categories, stats);
         }, 2000);
       }
     }
@@ -253,7 +254,7 @@ const App: React.FC = () => {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [sections, syncSettings, syncAuthorized]);
+  }, [sections, syncSettings, syncAuthorized, stats]);
 
   // Initial Remote Data Sync
   useEffect(() => {
@@ -263,6 +264,7 @@ const App: React.FC = () => {
         const result = await fetchRemoteData(syncSettings);
         if (result.ok && result.data) {
           setSections(result.data.sections);
+          if (result.data.stats) { setStats(result.data.stats); applyStats(result.data.stats); }
           localStorage.setItem('nav_search_categories_v2', JSON.stringify(result.data.categories));
           window.dispatchEvent(new CustomEvent('nav_search_remote_synced', { detail: result.data.categories }));
           // Remote data loaded → uploads are safe from now on.
@@ -287,13 +289,13 @@ const App: React.FC = () => {
         const sourceCode = serializeConstants(sections, categories);
         // Local mode (enabled=false) always saves; cloud upload requires authorization.
         if (!syncSettings.enabled || syncAuthorized) {
-          saveToSource(sourceCode, syncSettings, sections, categories);
+          saveToSource(sourceCode, syncSettings, sections, categories, stats);
         }
       }
     };
     window.addEventListener('nav_search_updated', handleHeaderUpdate);
     return () => window.removeEventListener('nav_search_updated', handleHeaderUpdate);
-  }, [sections, syncSettings, syncAuthorized]);
+  }, [sections, syncSettings, syncAuthorized, stats]);
 
   // Click outside listener for context menu
   useEffect(() => {
@@ -473,7 +475,16 @@ const App: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   // Card display sort: default / frequent (clicks) / recent (last click)
   const [sortMode, setSortModeState] = useState<SortMode>(() => getSortMode());
+  const [stats, setStats] = useState<ClickStats>(() => getStats());
   const displaySections = sortSections(sections, sortMode);
+
+  // Click stats broadcast by recordClick() — kept in state so the save chain
+  // includes them in the next cloud sync (nav-data.json stats field).
+  useEffect(() => {
+    const onStats = (e: any) => setStats(e.detail || {});
+    window.addEventListener('nav_stats_updated', onStats);
+    return () => window.removeEventListener('nav_stats_updated', onStats);
+  }, []);
 
   const cycleSortMode = () => {
     const next = nextSortMode(sortMode);
