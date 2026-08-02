@@ -570,7 +570,7 @@ const App: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   // Card display sort: default / frequent (clicks) / recent (last click)
   const [sortMode, setSortModeState] = useState<SortMode>(() => getSortMode());
-  const displaySections = mergePinnedSection(sortSections(sections, sortMode));
+  const displaySections = mergePinnedSection(sortSections(sections, sortMode), sortMode);
   // Context-menu card lookup — search ALL sections by id, because a pinned
   // card opened inside the "常用站点" view lives in its ORIGINAL section.
   const contextCard = contextMenu?.type === 'card'

@@ -29,7 +29,7 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections }) => {
     // Card display sort: default / frequent / recent
     const [sortMode, setSortModeState] = useState<SortMode>(() => getSortMode());
     const [sortTip, setSortTip] = useState('');
-    const displaySections = mergePinnedSection(sortSections(sections, sortMode));
+    const displaySections = mergePinnedSection(sortSections(sections, sortMode), sortMode);
 
     const cycleSortMode = () => {
         const next = nextSortMode(sortMode);
