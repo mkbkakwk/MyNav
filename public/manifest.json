@@ -1,0 +1,16 @@
+{
+  "name": "MyNav - 高颜值自部署极简导航页",
+  "short_name": "MyNav",
+  "description": "个人专属导航站:多引擎搜索、站点收藏、云端同步",
+  "start_url": "/MyNav/",
+  "scope": "/MyNav/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#6366f1",
+  "icons": [
+    { "src": "/MyNav/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/MyNav/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/MyNav/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
