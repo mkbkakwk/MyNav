@@ -331,32 +331,27 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                 {/* Local results ABOVE the search bar (suggestions expand inside
                     the bar downward, so the two never overlap) */}
                 {q && (
-                    <div className="mb-4 space-y-2.5">
+                    <div className="mb-4">
                         {matches.length === 0 ? (
                             <p className="text-center text-sm text-slate-400 py-6">本地没有匹配的站点</p>
                         ) : (
                             <>
-                                <p className="text-xs text-slate-400 font-medium">本地站点 · {matches.length} 个结果</p>
-                                {matches.map(m => (
-                                    <a
-                                        key={m.card.id}
-                                        href={m.card.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-3 p-3 rounded-2xl bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 active:scale-[0.98] transition-transform"
-                                    >
-                                        <div className="w-10 h-10 rounded-xl bg-white/50 dark:bg-slate-700/50 flex items-center justify-center overflow-hidden shrink-0">
-                                            <IconPreview icon={m.card.icon} siteUrl={m.card.url} size={20} className="w-full h-full" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{m.card.title}</p>
-                                            <p className="text-[11px] text-slate-400 truncate">
-                                                {m.sectionIcon} {m.sectionTitle}
-                                                {m.card.description ? ` · ${m.card.description}` : ''}
-                                            </p>
-                                        </div>
-                                    </a>
-                                ))}
+                                <p className="text-xs text-slate-400 font-medium mb-2">本地站点 · {matches.length} 个结果</p>
+                                {/* Single row of round icons, horizontally scrollable */}
+                                <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4">
+                                    {matches.slice(0, 20).map(m => (
+                                        <a
+                                            key={m.card.id}
+                                            href={m.card.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title={m.card.title}
+                                            className="shrink-0 w-12 h-12 rounded-full bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-sm flex items-center justify-center overflow-hidden active:scale-90 transition-transform"
+                                        >
+                                            <IconPreview icon={m.card.icon} siteUrl={m.card.url} size={22} className="w-full h-full" imgClassName="w-full h-full object-contain p-2" />
+                                        </a>
+                                    ))}
+                                </div>
                             </>
                         )}
                     </div>
