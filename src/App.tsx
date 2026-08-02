@@ -13,7 +13,7 @@ import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon, ListOrd
 import { serializeConstants, saveToSource, fetchRemoteData } from './utils/serialization';
 import { getFaviconUrl, getFaviconUrls } from './utils/favicon';
 import { fetchWebsiteMetadata } from './utils/metadata';
-import { recordClick, sortSections, getSortMode, setSortMode, nextSortMode } from './utils/clickStats';
+import { sortSections, getSortMode, setSortMode, nextSortMode } from './utils/clickStats';
 import type { SortMode } from './utils/clickStats';
 import Settings from './components/Settings';
 import IconPreview from './components/IconPreview';
