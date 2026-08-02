@@ -1065,7 +1065,7 @@ const App: React.FC = () => {
           {/* Card display sort (default → frequent → recent) */}
           <button
             onClick={cycleSortMode}
-            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-75 transform ring-1 ring-slate-900/5 dark:ring-white/10 ${sortMode !== 'default' ? 'bg-indigo-500 text-white scale-110' : 'scale-50 group-hover:scale-100 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:scale-110'}`}
+            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-75 transform ring-1 ring-slate-900/5 dark:ring-white/10 ${sortMode !== 'default' ? 'bg-indigo-500 text-white scale-110 hover:scale-[1.18]' : 'scale-50 group-hover:scale-100 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:scale-110'}`}
             title={sortMode === 'default' ? '卡片排序:默认(点击切换)' : sortMode === 'frequent' ? '卡片排序:常用优先(点击切换)' : '卡片排序:最近使用(点击切换)'}
           >
             {sortMode === 'default' ? <ListOrdered size={24} /> : sortMode === 'frequent' ? <Flame size={24} /> : <Clock size={24} />}
@@ -1074,7 +1074,7 @@ const App: React.FC = () => {
           {/* Sync status dot */}
           <button
             onClick={syncStatus === 'error' ? retrySync : undefined}
-            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-50 transform ring-1 ring-slate-900/5 dark:ring-white/10 scale-50 group-hover:scale-100 bg-white dark:bg-slate-700 ${syncStatus === 'error' ? 'hover:scale-110' : ''}`}
+            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-50 transform ring-1 ring-slate-900/5 dark:ring-white/10 scale-50 group-hover:scale-100 bg-white dark:bg-slate-700 hover:scale-110`}
             title={syncStatus === 'idle' ? '尚未同步' : syncStatus === 'syncing' ? '同步中...' : syncStatus === 'success' ? `已同步 ${formatAgo(lastSyncAt)}` : `同步失败:${syncError || ''}(点击重试)`}
           >
             <span className={`w-3.5 h-3.5 rounded-full ${syncStatus === 'idle' ? 'bg-slate-400' : syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' : syncStatus === 'success' ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
