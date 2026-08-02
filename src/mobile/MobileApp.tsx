@@ -48,7 +48,7 @@ const MobileApp: React.FC<MobileAppProps> = ({
     };
 
     return (
-        <div className="relative min-h-screen pb-16 landscape:pb-14 text-slate-900 dark:text-white">
+        <div className="relative min-h-[100dvh] pb-16 landscape:pb-14 text-slate-900 dark:text-white">
             <MobileBackground />
 
             <div className="relative z-10">
