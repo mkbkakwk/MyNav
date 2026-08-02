@@ -16,6 +16,10 @@ interface MobileAppProps {
     onPullRemote: () => Promise<{ ok: boolean; message: string }>;
     onKeepLocal: () => void;
     syncAuthorized: boolean;
+    syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+    lastSyncAt: number | null;
+    syncError: string | null;
+    onRetrySync: () => void;
 }
 
 /** Fixed soft gradient background, matching the desktop look. */
@@ -29,6 +33,7 @@ const MobileBackground: React.FC = () => (
 const MobileApp: React.FC<MobileAppProps> = ({
     sections, setSections, syncSettings, setSyncSettings,
     onPullRemote, onKeepLocal, syncAuthorized,
+    syncStatus, lastSyncAt, syncError, onRetrySync,
 }) => {
     const [tab, setTab] = useState<MobileTab>('home');
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -38,7 +43,16 @@ const MobileApp: React.FC<MobileAppProps> = ({
             <MobileBackground />
 
             <div className="relative z-10">
-                {tab === 'home' && <MobileHome sections={sections} setSections={setSections} />}
+                {tab === 'home' && (
+                    <MobileHome
+                        sections={sections}
+                        setSections={setSections}
+                        syncStatus={syncStatus}
+                        lastSyncAt={lastSyncAt}
+                        syncError={syncError}
+                        onRetrySync={onRetrySync}
+                    />
+                )}
                 {tab === 'search' && <MobileSearch sections={sections} />}
                 {tab === 'settings' && (
                     <div className="px-4 pt-6 pb-10 max-w-3xl mx-auto">

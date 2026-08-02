@@ -160,6 +160,46 @@ const App: React.FC = () => {
   // effects above reference it.
   const [stats, setStats] = useState<ClickStats>(() => getStats());
 
+  // Sync status indicator state (persisted last-sync time)
+  type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(() => {
+    const v = localStorage.getItem('nav_last_sync_v1');
+    return v ? Number(v) : null;
+  });
+
+  const updateSyncState = (result: { ok: boolean; error?: string }) => {
+    if (result.ok) {
+      setSyncStatus('success');
+      setSyncError(null);
+      const now = Date.now();
+      setLastSyncAt(now);
+      try { localStorage.setItem('nav_last_sync_v1', String(now)); } catch { /* ignore */ }
+    } else {
+      setSyncStatus('error');
+      setSyncError(result.error || '同步失败');
+    }
+  };
+
+  const retrySync = () => {
+    const categoriesJson = localStorage.getItem('nav_search_categories_v2');
+    if (!categoriesJson) return;
+    const categories = JSON.parse(categoriesJson);
+    const sourceCode = serializeConstants(sections, categories);
+    setSyncStatus('syncing');
+    saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
+  };
+
+  const formatAgo = (ts: number | null): string => {
+    if (!ts) return '';
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return `${s} 秒前`;
+    if (s < 3600) return `${Math.floor(s / 60)} 分钟前`;
+    if (s < 86400) return `${Math.floor(s / 3600)} 小时前`;
+    return `${Math.floor(s / 86400)} 天前`;
+  };
+
   // Sort Mode State
   const [isSortMode, setIsSortMode] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -218,6 +258,7 @@ const App: React.FC = () => {
       localStorage.setItem('nav_search_categories_v2', JSON.stringify(result.data.categories));
       window.dispatchEvent(new CustomEvent('nav_search_remote_synced', { detail: result.data.categories }));
       setSyncAuthorized(true);
+      updateSyncState({ ok: true });
       return { ok: true, message: `拉取成功,已载入 ${result.data.sections.length} 个分区` };
     }
     if (result.ok && result.notFound) {
@@ -251,7 +292,8 @@ const App: React.FC = () => {
       if (syncSettings.enabled && isInitialLoaded && syncAuthorized) {
         if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
         syncTimerRef.current = setTimeout(() => {
-          saveToSource(sourceCode, syncSettings, sections, categories, stats);
+          setSyncStatus('syncing');
+          saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
         }, 2000);
       }
     }
@@ -294,7 +336,8 @@ const App: React.FC = () => {
         const sourceCode = serializeConstants(sections, categories);
         // Local mode (enabled=false) always saves; cloud upload requires authorization.
         if (!syncSettings.enabled || syncAuthorized) {
-          saveToSource(sourceCode, syncSettings, sections, categories, stats);
+          setSyncStatus('syncing');
+          saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
         }
       }
     };
@@ -543,6 +586,10 @@ const App: React.FC = () => {
         onPullRemote={handlePullRemote}
         onKeepLocal={handleKeepLocal}
         syncAuthorized={syncAuthorized}
+        syncStatus={syncStatus}
+        lastSyncAt={lastSyncAt}
+        syncError={syncError}
+        onRetrySync={retrySync}
       />
     );
   }
@@ -1014,6 +1061,15 @@ const App: React.FC = () => {
             title={sortMode === 'default' ? '卡片排序:默认(点击切换)' : sortMode === 'frequent' ? '卡片排序:常用优先(点击切换)' : '卡片排序:最近使用(点击切换)'}
           >
             {sortMode === 'default' ? <ListOrdered size={24} /> : sortMode === 'frequent' ? <Flame size={24} /> : <Clock size={24} />}
+          </button>
+
+          {/* Sync status dot */}
+          <button
+            onClick={syncStatus === 'error' ? retrySync : undefined}
+            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-50 transform ring-1 ring-slate-900/5 dark:ring-white/10 scale-50 group-hover:scale-100 bg-white dark:bg-slate-700 ${syncStatus === 'error' ? 'hover:scale-110' : ''}`}
+            title={syncStatus === 'idle' ? '尚未同步' : syncStatus === 'syncing' ? '同步中...' : syncStatus === 'success' ? `已同步 ${formatAgo(lastSyncAt)}` : `同步失败:${syncError || ''}(点击重试)`}
+          >
+            <span className={`w-3.5 h-3.5 rounded-full ${syncStatus === 'idle' ? 'bg-slate-400' : syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' : syncStatus === 'success' ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
           </button>
 
           {/* Theme Toggle Button */}

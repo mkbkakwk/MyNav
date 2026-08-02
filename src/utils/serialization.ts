@@ -41,11 +41,19 @@ export const serializeToJson = (sections: SectionData[], categories: Category[],
     return JSON.stringify({ sections, categories, stats: stats || {} }, null, 2);
 };
 
+/** Result of a sync attempt, surfaced to the UI for the sync status indicator. */
+export interface SyncResult {
+    ok: boolean;
+    error?: string;
+}
+
 /**
  * Utility to send updated content to either the local Vite bridge or GitHub API.
+ * Returns the outcome so the UI can show sync state (syncing/success/error).
  */
-export const saveToSource = async (content: string, settings?: SyncSettings, sections?: SectionData[], categories?: Category[], stats?: ClickStats) => {
+export const saveToSource = async (content: string, settings?: SyncSettings, sections?: SectionData[], categories?: Category[], stats?: ClickStats): Promise<SyncResult> => {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    let localFailed: string | null = null;
 
     // 1. Local Persistence (Vite Bridge)
     if (isLocal) {
@@ -58,9 +66,10 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
             const result = await response.json();
             if (!result.success) throw new Error(result.error);
             console.log('Successfully synced with local constants.ts');
-            return;
-        } catch (err) {
+            return { ok: true };
+        } catch (err: any) {
             console.error('Failed to sync with local source files:', err);
+            localFailed = err.message || '本地写入失败';
         }
     }
 
@@ -108,10 +117,15 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
                 throw new Error(`GitHub API Commit Error (PUT): ${err.message || commitResponse.statusText}`);
             }
             console.log('Successfully synced with private cloud storage (SHA refreshed)');
+            return { ok: true };
         } catch (err: any) {
             console.error('同步失败:', err.message);
+            return { ok: false, error: err.message };
         }
     }
+
+    // No cloud target (non-local with sync disabled): nothing failed.
+    return { ok: true, error: localFailed || undefined };
 };
 
 /**
