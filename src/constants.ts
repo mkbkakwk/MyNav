@@ -2,12 +2,6 @@ import type { SectionData, SidebarItem, SearchEngine } from './types';
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
-    "id": "fav",
-    "title": "常用站点",
-    "icon": "⭐",
-    "href": "#fav"
-  },
-  {
     "id": "digital",
     "title": "数字素养",
     "icon": "🎓",
@@ -213,69 +207,6 @@ export const SEARCH_ENGINES: SearchEngine[] = SEARCH_CATEGORIES['常用'] || [];
 
 export const SECTIONS: SectionData[] = [
   {
-    "id": "fav",
-    "title": "常用站点",
-    "icon": "⭐",
-    "items": [
-      {
-        "id": "1",
-        "title": "数据搜索",
-        "description": "虫部落聚合搜索，网罗全网资源",
-        "icon": "🔍",
-        "url": "https://search.chongbuluo.com/"
-      },
-      {
-        "id": "3",
-        "title": "秘塔 AI",
-        "description": "AI 资源搜索",
-        "icon": "🧠",
-        "url": "https://metaso.cn/"
-      },
-      {
-        "id": "4",
-        "title": "深度求索",
-        "description": "深度 AI 办公工具",
-        "icon": "🐳",
-        "url": "https://www.deepseek.com/"
-      },
-      {
-        "id": "5",
-        "title": "Windows 装机",
-        "description": "生产力工具",
-        "icon": "🪟",
-        "url": "https://hellowindows.cn/"
-      },
-      {
-        "id": "6",
-        "title": "实习指南",
-        "description": "职场技巧与窍门",
-        "icon": "🎓",
-        "url": "https://www.nowcoder.com/"
-      },
-      {
-        "id": "7",
-        "title": "财经新闻",
-        "description": "最新市场动态",
-        "icon": "💰",
-        "url": "https://wallstreetcn.com/"
-      },
-      {
-        "id": "8",
-        "title": "LPR 查询",
-        "description": "贷款市场报价利率",
-        "icon": "📊",
-        "url": "https://www.lkdf.xyz/"
-      },
-      {
-        "id": "2",
-        "title": "豆包 AI",
-        "description": "写作、摘要、数据",
-        "icon": "🤖",
-        "url": "https://www.doubao.com/"
-      }
-    ]
-  },
-  {
     "id": "digital",
     "title": "数字素养",
     "icon": "🎓",
@@ -284,20 +215,20 @@ export const SECTIONS: SectionData[] = [
         "id": "d2",
         "title": "网络安全",
         "description": "安全意识与防护",
-        "icon": "🛡️",
+        "icon": "https://www.google.com/s2/favicons?domain=www.freebuf.com&sz=128",
         "url": "https://www.freebuf.com/"
       },
       {
         "id": "d3",
         "title": "数据分析",
         "description": "数据驱动决策",
-        "icon": "📈",
+        "icon": "https://docs.pingcap.com/static/c565fb7871c56153a32359ea1b1b284c/favicon-48x48.ico",
         "url": "https://docs.pingcap.com/zh/tidb/stable"
       },
       {
         "id": "d1",
-        "title": "全民数字素养",
-        "description": "提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能",
+        "title": "全民数字素养全民数字素养全民数字素养全民数字素养全民数字素养",
+        "description": "提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能",
         "icon": "📱",
         "url": "http://chinadata.cn/"
       },
@@ -330,13 +261,6 @@ export const SECTIONS: SectionData[] = [
         "url": "https://flomoapp.com/"
       },
       {
-        "id": "12",
-        "title": "息流",
-        "description": "新一代生产力工具",
-        "icon": "🌊",
-        "url": "https://flowus.cn/"
-      },
-      {
         "id": "11",
         "title": "看板工具",
         "description": "可视化项目管理",
@@ -344,11 +268,36 @@ export const SECTIONS: SectionData[] = [
         "url": "https://trello.com/"
       },
       {
+        "id": "12",
+        "title": "息流",
+        "description": "新一代生产力工具",
+        "icon": "🌊",
+        "url": "https://flowus.cn/"
+      },
+      {
         "id": "13",
         "title": "OneNote",
         "description": "微软笔记应用",
         "icon": "📒",
         "url": "https://www.onenote.com/"
+      },
+      {
+        "id": "6",
+        "title": "实习指南",
+        "description": "职场技巧与窍门",
+        "icon": "🎓",
+        "url": "https://www.nowcoder.com/",
+        "pinned": true,
+        "pinnedIndex": 4
+      },
+      {
+        "id": "7",
+        "title": "财经新闻",
+        "description": "最新市场动态",
+        "icon": "💰",
+        "url": "https://wallstreetcn.com/",
+        "pinned": true,
+        "pinnedIndex": 5
       }
     ]
   },
@@ -398,6 +347,33 @@ export const SECTIONS: SectionData[] = [
         "description": "百度 AIGC 平台",
         "icon": "🎨",
         "url": "https://aigc.baidu.com/"
+      },
+      {
+        "id": "3",
+        "title": "秘塔 AI",
+        "description": "AI 资源搜索",
+        "icon": "🧠",
+        "url": "https://metaso.cn/",
+        "pinned": true,
+        "pinnedIndex": 1
+      },
+      {
+        "id": "4",
+        "title": "深度求索",
+        "description": "深度 AI 办公工具",
+        "icon": "https://www.deepseek.com/favicon.ico",
+        "url": "https://www.deepseek.com/",
+        "pinned": true,
+        "pinnedIndex": 2
+      },
+      {
+        "id": "2",
+        "title": "豆包 AI",
+        "description": "写作、摘要、数据",
+        "icon": "🤖",
+        "url": "https://www.doubao.com/",
+        "pinned": true,
+        "pinnedIndex": 7
       }
     ]
   },
@@ -461,6 +437,33 @@ export const SECTIONS: SectionData[] = [
         "description": "二维码生成器",
         "icon": "🔳",
         "url": "https://cli.im/"
+      },
+      {
+        "id": "1",
+        "title": "数据搜索",
+        "description": "虫部落聚合搜索，网罗全网资源",
+        "icon": "🔍",
+        "url": "https://search.chongbuluo.com/",
+        "pinned": true,
+        "pinnedIndex": 0
+      },
+      {
+        "id": "5",
+        "title": "Windows 装机",
+        "description": "生产力工具",
+        "icon": "🪟",
+        "url": "https://hellowindows.cn/",
+        "pinned": true,
+        "pinnedIndex": 3
+      },
+      {
+        "id": "8",
+        "title": "LPR 查询",
+        "description": "贷款市场报价利率",
+        "icon": "📊",
+        "url": "https://www.lkdf.xyz/",
+        "pinned": true,
+        "pinnedIndex": 6
       }
     ]
   },
