@@ -155,6 +155,10 @@ const App: React.FC = () => {
   // Prevents first-time setup from overwriting remote data with local template data.
   const [syncAuthorized, setSyncAuthorized] = useState(false);
 
+  // Click stats (shared with cloud sync) — declared early because the save
+  // effects above reference it.
+  const [stats, setStats] = useState<ClickStats>(() => getStats());
+
   // Sort Mode State
   const [isSortMode, setIsSortMode] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -475,7 +479,6 @@ const App: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   // Card display sort: default / frequent (clicks) / recent (last click)
   const [sortMode, setSortModeState] = useState<SortMode>(() => getSortMode());
-  const [stats, setStats] = useState<ClickStats>(() => getStats());
   const displaySections = sortSections(sections, sortMode);
 
   // Click stats broadcast by recordClick() — kept in state so the save chain
