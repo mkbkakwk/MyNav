@@ -16,10 +16,15 @@ MyNav 是一个专为个人打造的高颜值、极简、生产力导向的导�
 - **深度黑暗模式**:定制级明暗切换效果,针对暗色环境深度优化
 - **动态壁纸感**:背景包含丝滑的浮动渐变 light-ball 动画
 
-![Light Mode](./Image/LightTheme.png)
-![Dark Mode](./Image/DarkTheme.png)
-![Light Theme Mobile Main Page](./Image/LightThemeMobileMainPage.png)
-![Light Theme Mobile Search Page](./Image/LightThemeMobileSearchPage.png)
+<div align="center">
+  <img src="./Image/LightTheme.png" width="46%" alt="Light Mode" />
+  <img src="./Image/DarkTheme.png" width="46%" alt="Dark Mode" />
+</div>
+
+<div align="center">
+  <img src="./Image/LightThemeMobileMainPage.png" width="46%" alt="Light Theme Mobile Main Page" />
+  <img src="./Image/LightThemeMobileSearchPage.png" width="46%" alt="Light Theme Mobile Search Page" />
+</div>
 
 ### 📱 双端独立界面
 - **桌面端**:侧边栏导航 + 顶部多引擎搜索 + 分区卡片网格,窗口宽度自适应列数
@@ -32,6 +37,8 @@ MyNav 是一个专为个人打造的高颜值、极简、生产力导向的导�
 ### 🚀 生产力增强
 - **多引擎搜索**:集成百度、谷歌、必应等引擎,支持分类分组、自定义添加和快速切换
 - **搜索建议**:实时获取主流引擎的搜索关键词补全
+- **桌面 Ctrl+K 命令面板**:一键唤起站内搜索,实时过滤本地站点,支持 `↑↓` 选择、`Enter` 打开
+- **点击统计排序**:自动记录卡片点击次数,一键切换「默认 / 常用优先 / 最近使用」排序(桌面与移动端同步)
 
 ### 🔍 智能元数据抓取
 - 新增站点时输入 URL 自动获取标题、描述、图标(五层降级链路:Microlink → Jina Reader → 多代理抓取 HTML → oEmbed/RSS 结构化端点 → 域名图标兜底)
@@ -40,6 +47,7 @@ MyNav 是一个专为个人打造的高颜值、极简、生产力导向的导�
 ### 动态管理与同步
 - **全方位 CRUD**:直接在网页上增删改分类和站点卡片,无需手动编辑代码(移动端长按呼出操作菜单)
 - **拖拽排序 (DnD)**:基于 `@dnd-kit` 实现桌面端可视化拖拽布局
+- **点击统计**:使用频率与最近访问记录在案,`stats` 字段随云数据同步,多设备排序依据一致
 - **🔥 源码/隐私双栖同步**:
   - **本地开发**:改动自动同步至 `src/constants.ts`
   - **在线部署**:支持将数据存入**另一个私有仓库**的 `nav-data.json`,实现代码公开、数据隐私
