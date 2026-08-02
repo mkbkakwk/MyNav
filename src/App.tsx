@@ -194,11 +194,18 @@ const App: React.FC = () => {
   const formatAgo = (ts: number | null): string => {
     if (!ts) return '';
     const s = Math.floor((Date.now() - ts) / 1000);
-    if (s < 60) return `${s} 秒前`;
+    if (s < 60) return '刚刚';
     if (s < 3600) return `${Math.floor(s / 60)} 分钟前`;
     if (s < 86400) return `${Math.floor(s / 3600)} 小时前`;
     return `${Math.floor(s / 86400)} 天前`;
   };
+
+  // Tick every minute so relative sync time ("刚刚" / "N 分钟前") stays fresh.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   // Sort Mode State
   const [isSortMode, setIsSortMode] = useState(false);
@@ -277,31 +284,52 @@ const App: React.FC = () => {
     setSyncAuthorized(true);
   };
 
+  // Shared sync runner (used by debounced saves, header updates, stats flush).
+  // Kept in a ref so late timers always call the latest closure.
+  const runSync = () => {
+    const categoriesJson = localStorage.getItem('nav_search_categories_v2');
+    if (!categoriesJson) return;
+    const categories = JSON.parse(categoriesJson);
+    const sourceCode = serializeConstants(sections, categories);
+    setSyncStatus('syncing');
+    saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
+  };
+  const runSyncRef = useRef(runSync);
+  runSyncRef.current = runSync;
+
   // Persistence & Source Sync
   useEffect(() => {
     // 1. Immediate Local Storage Update
     localStorage.setItem('nav_sections_v1', JSON.stringify(sections));
     window.dispatchEvent(new CustomEvent('nav_sections_updated', { detail: sections }));
 
-    const categoriesJson = localStorage.getItem('nav_search_categories_v2');
-    if (categoriesJson) {
-      const categories = JSON.parse(categoriesJson);
-      const sourceCode = serializeConstants(sections, categories);
-
-      // 2. Debounced Cloud Sync (2 Seconds) — only after explicit user authorization
-      if (syncSettings.enabled && isInitialLoaded && syncAuthorized) {
-        if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-        syncTimerRef.current = setTimeout(() => {
-          setSyncStatus('syncing');
-          saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
-        }, 2000);
-      }
+    // 2. Debounced Cloud Sync (2 Seconds) — only after explicit user authorization.
+    //    NOTE: stats intentionally NOT in the dependency array — click stats sync
+    //    at a lower frequency via the 30s flush below (fixes "always 0 秒前").
+    if (syncSettings.enabled && isInitialLoaded && syncAuthorized) {
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = setTimeout(runSync, 2000);
     }
 
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [sections, syncSettings, syncAuthorized, stats]);
+  }, [sections, syncSettings, syncAuthorized]);
+
+  // 3. Click-stats flush: debounced 30s so frequent clicks don't hammer the sync
+  //    and don't keep resetting the "上次同步" timestamp.
+  //    Guarded by the same authorization as the debounced save — an unauthorized
+  //    session must NEVER push local data over the remote.
+  const statsFlushRef = useRef<any>(null);
+  useEffect(() => {
+    if (statsFlushRef.current) clearTimeout(statsFlushRef.current);
+    if (syncSettings.enabled && syncAuthorized) {
+      statsFlushRef.current = setTimeout(() => runSyncRef.current(), 30000);
+    }
+    return () => {
+      if (statsFlushRef.current) clearTimeout(statsFlushRef.current);
+    };
+  }, [stats, syncSettings.enabled, syncAuthorized]);
 
   // Initial Remote Data Sync
   useEffect(() => {
