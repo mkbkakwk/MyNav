@@ -14,13 +14,9 @@ import { togglePin, mergePinnedSection } from '../utils/pinned';
 interface MobileHomeProps {
     sections: SectionData[];
     setSections: React.Dispatch<React.SetStateAction<SectionData[]>>;
-    syncStatus: 'idle' | 'syncing' | 'success' | 'error';
-    lastSyncAt: number | null;
-    syncError: string | null;
-    onRetrySync: () => void;
 }
 
-const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections, syncStatus, lastSyncAt, syncError, onRetrySync }) => {
+const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections }) => {
     const { width } = useWindowSize();
     // Columns adapt to screen width: narrow phones 2, phones 3,
     // small tablets 4, larger screens 5.
@@ -42,28 +38,6 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections, syncStat
         // Same hint as the desktop title tooltip, as a toast on mobile.
         setSortTip(next === 'default' ? '卡片排序:默认' : next === 'frequent' ? '卡片排序:常用优先' : '卡片排序:最近使用');
         setTimeout(() => setSortTip(''), 2000);
-    };
-
-    // Sync status toast + retry
-    const [syncTip, setSyncTip] = useState('');
-    const formatAgo = (ts: number | null): string => {
-        if (!ts) return '';
-        const s = Math.floor((Date.now() - ts) / 1000);
-        if (s < 60) return `${s} 秒前`;
-        if (s < 3600) return `${Math.floor(s / 60)} 分钟前`;
-        if (s < 86400) return `${Math.floor(s / 3600)} 小时前`;
-        return `${Math.floor(s / 86400)} 天前`;
-    };
-    const handleSyncClick = () => {
-        if (syncStatus === 'error') {
-            setSyncTip(`同步失败:${syncError || ''},正在重试...`);
-            onRetrySync();
-        } else if (syncStatus === 'syncing') {
-            setSyncTip('正在同步...');
-        } else {
-            setSyncTip(`已同步 ${formatAgo(lastSyncAt)}`);
-        }
-        setTimeout(() => setSyncTip(''), 2200);
     };
 
     const startSectionPress = (sectionId: string) => {
@@ -115,15 +89,6 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections, syncStat
                     <p className="text-xs text-slate-400 mt-0.5">你的专属导航站</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleSyncClick}
-                        className={`w-9 h-9 rounded-full bg-white/80 dark:bg-slate-800/80 flex items-center justify-center transition-colors ${
-                            syncStatus === 'error' ? 'text-red-500' : syncStatus === 'syncing' ? 'text-amber-400' : syncStatus === 'success' ? 'text-emerald-500' : 'text-slate-400'
-                        }`}
-                        title="同步状态"
-                    >
-                        <span className={`w-3 h-3 rounded-full ${syncStatus === 'idle' ? 'bg-slate-400' : syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' : syncStatus === 'success' ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
-                    </button>
                     <button
                         onClick={cycleSortMode}
                         className={`w-9 h-9 rounded-full bg-white/80 dark:bg-slate-800/80 flex items-center justify-center transition-colors ${sortMode !== 'default' ? 'text-primary' : 'text-slate-500'}`}
@@ -198,13 +163,6 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections, syncStat
             {sortTip && (
                 <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] px-4 py-2 rounded-full bg-slate-800/90 text-white text-xs font-medium shadow-lg backdrop-blur animate-in fade-in pointer-events-none whitespace-nowrap">
                     {sortTip}
-                </div>
-            )}
-
-            {/* Sync status toast */}
-            {syncTip && (
-                <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[70] px-4 py-2 rounded-full bg-slate-800/90 text-white text-xs font-medium shadow-lg backdrop-blur animate-in fade-in pointer-events-none whitespace-nowrap">
-                    {syncTip}
                 </div>
             )}
 

@@ -38,6 +38,15 @@ const MobileApp: React.FC<MobileAppProps> = ({
     const [tab, setTab] = useState<MobileTab>('home');
     const [settingsOpen, setSettingsOpen] = useState(false);
 
+    const formatAgo = (ts: number | null): string => {
+        if (!ts) return '';
+        const s = Math.floor((Date.now() - ts) / 1000);
+        if (s < 60) return `${s} 秒前`;
+        if (s < 3600) return `${Math.floor(s / 60)} 分钟前`;
+        if (s < 86400) return `${Math.floor(s / 3600)} 小时前`;
+        return `${Math.floor(s / 86400)} 天前`;
+    };
+
     return (
         <div className="relative min-h-screen pb-16 landscape:pb-14 text-slate-900 dark:text-white">
             <MobileBackground />
@@ -47,10 +56,6 @@ const MobileApp: React.FC<MobileAppProps> = ({
                     <MobileHome
                         sections={sections}
                         setSections={setSections}
-                        syncStatus={syncStatus}
-                        lastSyncAt={lastSyncAt}
-                        syncError={syncError}
-                        onRetrySync={onRetrySync}
                     />
                 )}
                 {tab === 'search' && <MobileSearch sections={sections} />}
@@ -60,7 +65,7 @@ const MobileApp: React.FC<MobileAppProps> = ({
                         <div className="space-y-3">
                             <button
                                 onClick={() => setSettingsOpen(true)}
-                                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 active:scale-[0.98] transition-transform"
+                                className="w-full h-[72px] flex items-center gap-3 p-4 rounded-2xl bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 active:scale-[0.98] transition-transform"
                             >
                                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
                                     <Github size={20} />
@@ -74,6 +79,39 @@ const MobileApp: React.FC<MobileAppProps> = ({
                                 </div>
                                 <ChevronRight size={18} className="text-slate-400" />
                             </button>
+
+                            {/* Sync status (text form, same height as the GitHub card) */}
+                            <div className="w-full h-[72px] px-4 rounded-2xl bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 flex items-center gap-3">
+                                <span className={`w-3 h-3 rounded-full shrink-0 ${syncStatus === 'idle' ? 'bg-slate-400'
+                                    : syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse'
+                                        : syncStatus === 'success' ? 'bg-emerald-500'
+                                            : 'bg-red-500 animate-pulse'
+                                    }`} />
+                                <div className="flex-1 min-w-0">
+                                    <p className={`text-sm font-bold ${syncStatus === 'error' ? 'text-red-500'
+                                        : syncStatus === 'syncing' ? 'text-amber-500'
+                                            : syncStatus === 'success' ? 'text-emerald-600 dark:text-emerald-400'
+                                                : 'text-slate-500 dark:text-slate-400'
+                                        }`}>
+                                        {syncStatus === 'idle' ? '尚未同步' : syncStatus === 'syncing' ? '同步中...' : syncStatus === 'success' ? '已同步' : '同步失败'}
+                                    </p>
+                                    {syncStatus === 'error' ? (
+                                        <p className="text-[11px] text-red-500 truncate">{syncError || '未知错误'}</p>
+                                    ) : syncStatus === 'success' ? (
+                                        <p className="text-[11px] text-slate-400">上次同步 {formatAgo(lastSyncAt)}</p>
+                                    ) : (
+                                        <p className="text-[11px] text-slate-400">&nbsp;</p>
+                                    )}
+                                </div>
+                                {syncStatus === 'error' && (
+                                    <button
+                                        onClick={onRetrySync}
+                                        className="shrink-0 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 text-xs font-bold active:scale-95 transition-transform"
+                                    >
+                                        重试同步
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <p className="mt-6 text-[11px] text-slate-400 text-center">MyNav · 长按卡片可编辑</p>
                     </div>
@@ -92,6 +130,7 @@ const MobileApp: React.FC<MobileAppProps> = ({
                     onPullRemote={onPullRemote}
                     onKeepLocal={onKeepLocal}
                     syncAuthorized={syncAuthorized}
+                    isMobile
                 />,
                 document.body
             )}

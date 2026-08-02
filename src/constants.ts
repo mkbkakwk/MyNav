@@ -2,6 +2,12 @@ import type { SectionData, SidebarItem, SearchEngine } from './types';
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
+    "id": "fav",
+    "title": "常用站点",
+    "icon": "⭐",
+    "href": "#fav"
+  },
+  {
     "id": "digital",
     "title": "数字素养",
     "icon": "🎓",
@@ -207,6 +213,12 @@ export const SEARCH_ENGINES: SearchEngine[] = SEARCH_CATEGORIES['常用'] || [];
 
 export const SECTIONS: SectionData[] = [
   {
+    "id": "fav",
+    "title": "常用站点",
+    "icon": "⭐",
+    "items": []
+  },
+  {
     "id": "digital",
     "title": "数字素养",
     "icon": "🎓",
@@ -223,21 +235,24 @@ export const SECTIONS: SectionData[] = [
         "title": "数据分析",
         "description": "数据驱动决策",
         "icon": "https://docs.pingcap.com/static/c565fb7871c56153a32359ea1b1b284c/favicon-48x48.ico",
-        "url": "https://docs.pingcap.com/zh/tidb/stable"
+        "url": "https://docs.pingcap.com/zh/tidb/stable",
+        "pinned": false
       },
       {
         "id": "d1",
         "title": "全民数字素养全民数字素养全民数字素养全民数字素养全民数字素养",
         "description": "提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能提升数字技能",
         "icon": "📱",
-        "url": "http://chinadata.cn/"
+        "url": "http://chinadata.cn/",
+        "pinned": false
       },
       {
         "id": "d4",
         "title": "编程入门",
         "description": "基础编程知识",
         "icon": "💻",
-        "url": "https://www.freecodecamp.org/chinese/"
+        "url": "https://www.freecodecamp.org/chinese/",
+        "pinned": false
       }
     ]
   },
@@ -349,15 +364,6 @@ export const SECTIONS: SectionData[] = [
         "url": "https://aigc.baidu.com/"
       },
       {
-        "id": "3",
-        "title": "秘塔 AI",
-        "description": "AI 资源搜索",
-        "icon": "🧠",
-        "url": "https://metaso.cn/",
-        "pinned": true,
-        "pinnedIndex": 1
-      },
-      {
         "id": "4",
         "title": "深度求索",
         "description": "深度 AI 办公工具",
@@ -365,6 +371,15 @@ export const SECTIONS: SectionData[] = [
         "url": "https://www.deepseek.com/",
         "pinned": true,
         "pinnedIndex": 2
+      },
+      {
+        "id": "3",
+        "title": "秘塔 AI",
+        "description": "AI 资源搜索",
+        "icon": "🧠",
+        "url": "https://metaso.cn/",
+        "pinned": true,
+        "pinnedIndex": 1
       },
       {
         "id": "2",

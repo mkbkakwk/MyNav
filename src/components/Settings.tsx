@@ -9,9 +9,11 @@ interface SettingsProps {
     onPullRemote: () => Promise<{ ok: boolean; message: string }>;
     onKeepLocal: () => void;
     syncAuthorized: boolean;
+    /** Mobile: render as a bottom sheet so it fits small screens. */
+    isMobile?: boolean;
 }
 
-const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, onPullRemote, onKeepLocal, syncAuthorized }) => {
+const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, onPullRemote, onKeepLocal, syncAuthorized, isMobile = false }) => {
     const [settings, setSettings] = useState<SyncSettings>(() => {
         const saved = localStorage.getItem('nav_sync_settings');
         return saved ? JSON.parse(saved) : { token: '', owner: '', repo: '', enabled: false };
@@ -81,9 +83,13 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, 
         <>
             {/* Settings Modal */}
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+                <div className={`fixed inset-0 z-[100] flex p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300 ${isMobile ? 'items-end' : 'items-center justify-center'}`}>
                     <div
-                        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-white/5 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500"
+                        className={`w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl border border-white/20 dark:border-white/5 ${
+                            isMobile
+                                ? 'rounded-t-3xl max-h-[88vh] overflow-y-auto no-scrollbar animate-in slide-in-from-bottom-8 duration-300'
+                                : 'rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500'
+                        }`}
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="relative p-8">
@@ -94,12 +100,12 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, 
                                 <X size={20} />
                             </button>
 
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                            <div className="flex items-center gap-3 mb-8 pr-10">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
                                     <Github size={28} />
                                 </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">GitHub 隐私云同步</h2>
+                                <div className="min-w-0">
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">GitHub 隐私云同步</h2>
                                     <p className="text-sm text-slate-500 dark:text-slate-400">建议存入另一个**私有仓库**以保护隐私</p>
                                 </div>
                             </div>
@@ -216,8 +222,8 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, 
 
             {/* First-enable decision dialog */}
             {askPull && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-white/5 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500">
+                <div className={`fixed inset-0 z-[120] flex p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300 ${isMobile ? 'items-end' : 'items-center justify-center'}`}>
+                    <div className={`w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl border border-white/20 dark:border-white/5 ${isMobile ? 'rounded-t-3xl max-h-[88vh] overflow-y-auto no-scrollbar animate-in slide-in-from-bottom-8 duration-300' : 'rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500'}`}>
                         <div className="relative p-8">
                             <button
                                 onClick={() => setAskPull(false)}
@@ -226,12 +232,12 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, 
                                 <X size={20} />
                             </button>
 
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                            <div className="flex items-center gap-3 mb-6 pr-10">
+                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
                                     <AlertTriangle size={28} />
                                 </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">已开启 GitHub 云同步</h3>
+                                <div className="min-w-0">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">已开启 GitHub 云同步</h3>
                                     <p className="text-sm text-slate-500 dark:text-slate-400">远程仓库可能已存在数据</p>
                                 </div>
                             </div>
