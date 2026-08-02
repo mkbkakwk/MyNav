@@ -15,7 +15,7 @@ import { getFaviconUrl, getFaviconUrls } from './utils/favicon';
 import { fetchWebsiteMetadata } from './utils/metadata';
 import { sortSections, getSortMode, setSortMode, nextSortMode, getStats, applyStats } from './utils/clickStats';
 import type { SortMode, ClickStats } from './utils/clickStats';
-import { mergePinnedSection, togglePin } from './utils/pinned';
+import { mergePinnedSection, togglePin, PINNED_SECTION_ID } from './utils/pinned';
 import Settings from './components/Settings';
 import IconPreview from './components/IconPreview';
 import { useWindowSize } from './hooks/useWindowSize';
@@ -340,6 +340,10 @@ const App: React.FC = () => {
     const activeContainer = findContainer(activeId);
     const overContainer = findContainer(overId);
 
+    // The pinned "常用站点" view is virtual: cards can neither be dragged
+    // into it nor out of it (pin/unpin happens via the context menu).
+    if (overContainer === PINNED_SECTION_ID || activeContainer === PINNED_SECTION_ID) return;
+
     if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
     setSections(prev => {
@@ -490,6 +494,8 @@ const App: React.FC = () => {
 
   // Click stats broadcast by recordClick() — kept in state so the save chain
   // includes them in the next cloud sync (nav-data.json stats field).
+  // Click stats broadcast by recordClick() — kept in state so the save chain
+  // includes them in the next cloud sync (nav-data.json stats field).
   useEffect(() => {
     const onStats = (e: any) => setStats(e.detail || {});
     window.addEventListener('nav_stats_updated', onStats);
@@ -551,7 +557,7 @@ const App: React.FC = () => {
         style={{ maxWidth: `${containerMaxWidth}px` }}
       >
         <Sidebar
-          externalSections={sections}
+          externalSections={displaySections}
         />
 
         <main className="flex-1 min-w-0 space-y-12">
@@ -563,8 +569,21 @@ const App: React.FC = () => {
             onDragEnd={handleDragEnd}
           >
             <SortableContext items={displaySections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-              {displaySections.map((section, index) => (
+              {displaySections.map((section, index) => {
+                const isPinnedView = section.id === PINNED_SECTION_ID;
+                return (
                 <section key={section.id} id={section.id} className="scroll-mt-60">
+                  {isPinnedView ? (
+                    /* Virtual pinned view: no drag in/out/sort — pin/unpin only */
+                    <div className="flex items-center justify-between mb-6 group">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl filter drop-shadow-md">{section.icon}</span>
+                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">
+                          {section.title}
+                        </h2>
+                      </div>
+                    </div>
+                  ) : (
                   <SortableWrapper id={section.id} disabled={!isSortMode}>
                     <div
                       onContextMenu={(e) => onRightClick(e, 'section', section.id)}
@@ -594,6 +613,7 @@ const App: React.FC = () => {
                       </button>
                     </div>
                   </SortableWrapper>
+                  )}
 
                   <div
                     className="grid min-h-[50px]"
@@ -602,6 +622,17 @@ const App: React.FC = () => {
                       gap: `${dynamicGap}px`
                     }}
                   >
+                    {isPinnedView ? (
+                      section.items.map((item, index) => (
+                        <Card
+                          key={item.id}
+                          item={item}
+                          index={index}
+                          isSortMode={false}
+                          onContextMenu={(e) => onRightClick(e, 'card', item.id, section.id)}
+                        />
+                      ))
+                    ) : (
                     <SortableContext items={section.items.map(i => i.id)} strategy={horizontalListSortingStrategy}>
                       {section.items.map((item, index) => (
                         <SortableWrapper key={item.id} id={item.id} disabled={!isSortMode}>
@@ -614,9 +645,11 @@ const App: React.FC = () => {
                         </SortableWrapper>
                       ))}
                     </SortableContext>
+                    )}
                   </div>
                 </section>
-              ))}
+                );
+              })}
             </SortableContext>
             <DragOverlay dropAnimation={{
               sideEffects: defaultDropAnimationSideEffects({

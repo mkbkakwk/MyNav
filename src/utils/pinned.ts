@@ -10,20 +10,19 @@ export const collectPinnedItems = (sections: SectionData[]): LinkItem[] =>
         .sort((a, b) => (a.pinnedIndex ?? 0) - (b.pinnedIndex ?? 0));
 
 /**
- * Merge the pinned view: the "常用站点" section shows its own items first
- * (user-ordered, drag-sortable), then pinned cards from other sections
- * (pinnedIndex order). If no fav section exists, a virtual one is created
- * when there are pinned cards.
+ * Build the pinned view as a PURELY VIRTUAL section: the real fav section is
+ * only a hidden data container — its items are treated as pinned — plus pinned
+ * cards from other sections. No card can be dragged in/out (pin/unpin is done
+ * via the context menu only).
  */
 export const mergePinnedSection = (sections: SectionData[]): SectionData[] => {
-    const extra = collectPinnedItems(sections);
     const fav = sections.find(s => s.id === PINNED_SECTION_ID);
-    if (!fav) {
-        if (extra.length === 0) return sections;
-        return [{ id: PINNED_SECTION_ID, title: '常用站点', icon: '⭐', items: extra }, ...sections];
-    }
-    if (extra.length === 0) return sections;
-    return sections.map(s => (s.id === PINNED_SECTION_ID ? { ...s, items: [...s.items, ...extra] } : s));
+    const favItems = fav?.items || [];
+    const extra = collectPinnedItems(sections); // already pinnedIndex-ordered
+    const merged = [...favItems, ...extra];
+    const rest = sections.filter(s => s.id !== PINNED_SECTION_ID);
+    if (merged.length === 0) return rest;
+    return [{ id: PINNED_SECTION_ID, title: '常用站点', icon: '⭐', items: merged }, ...rest];
 };
 
 /** Pin/unpin a card. Pinning assigns the next pinnedIndex (appended to the pinned view). */
