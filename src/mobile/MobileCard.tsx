@@ -66,6 +66,9 @@ const MobileCard: React.FC<MobileCardProps> = ({ card, onLongPress }) => {
                     {card.description}
                 </p>
             )}
+            {card.pinned && (
+                <span className="absolute top-1 right-1 text-amber-400 text-[10px] drop-shadow select-none" title="已置顶">⭐</span>
+            )}
         </a>
     );
 };

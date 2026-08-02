@@ -9,12 +9,13 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon, ListOrdered, Flame, Clock } from 'lucide-react';
+import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon, ListOrdered, Flame, Clock, Star } from 'lucide-react';
 import { serializeConstants, saveToSource, fetchRemoteData } from './utils/serialization';
 import { getFaviconUrl, getFaviconUrls } from './utils/favicon';
 import { fetchWebsiteMetadata } from './utils/metadata';
 import { sortSections, getSortMode, setSortMode, nextSortMode, getStats, applyStats } from './utils/clickStats';
 import type { SortMode, ClickStats } from './utils/clickStats';
+import { mergePinnedSection, togglePin } from './utils/pinned';
 import Settings from './components/Settings';
 import IconPreview from './components/IconPreview';
 import { useWindowSize } from './hooks/useWindowSize';
@@ -479,7 +480,13 @@ const App: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   // Card display sort: default / frequent (clicks) / recent (last click)
   const [sortMode, setSortModeState] = useState<SortMode>(() => getSortMode());
-  const displaySections = sortSections(sections, sortMode);
+  const displaySections = mergePinnedSection(sortSections(sections, sortMode));
+  // Context-menu card lookup — search ALL sections by id, because a pinned
+  // card opened inside the "常用站点" view lives in its ORIGINAL section.
+  const contextCard = contextMenu?.type === 'card'
+    ? sections.flatMap(s => s.items).find(i => i.id === contextMenu.id)
+    : undefined;
+  const dataPinned = !!contextCard?.pinned;
 
   // Click stats broadcast by recordClick() — kept in state so the save chain
   // includes them in the next cloud sync (nav-data.json stats field).
@@ -508,10 +515,12 @@ const App: React.FC = () => {
 
   const handleDelete = () => {
     if (!deleteConfig) return;
-    const { type, id, parentId } = deleteConfig;
+    const { type, id } = deleteConfig;
     setSections(prev => {
       if (type === 'section') return prev.filter(s => s.id !== id);
-      return prev.map(s => s.id === parentId ? { ...s, items: s.items.filter(i => i.id !== id) } : s);
+      // Find the card's actual section by id (it may live outside the
+      // parentId shown in the pinned "常用站点" view).
+      return prev.map(s => s.items.some(i => i.id === id) ? { ...s, items: s.items.filter(i => i.id !== id) } : s);
     });
     setDeleteConfig(null);
   };
@@ -671,7 +680,7 @@ const App: React.FC = () => {
             onClick={() => {
               const data = contextMenu.type === 'section'
                 ? sections.find(s => s.id === contextMenu.id)
-                : sections.find(s => s.id === contextMenu.parentId)?.items.find(i => i.id === contextMenu.id);
+                : sections.flatMap(s => s.items).find(i => i.id === contextMenu.id);
               if (data) {
                 setModalConfig({
                   open: true, mode: 'edit', type: contextMenu.type, targetId: contextMenu.id, parentId: contextMenu.parentId,
@@ -688,11 +697,23 @@ const App: React.FC = () => {
           >
             <Edit2 size={14} /> 编辑
           </button>
+          {contextMenu.type === 'card' && (
+            <button
+              onClick={() => {
+                const data = sections.flatMap(s => s.items).find(i => i.id === contextMenu.id);
+                if (data) setSections(prev => togglePin(prev, data.id));
+                setContextMenu(null);
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center gap-2"
+            >
+              <Star size={14} className={dataPinned ? 'text-amber-400 fill-amber-400' : ''} /> {dataPinned ? '取消置顶' : '置顶'}
+            </button>
+          )}
           <button
             onClick={() => {
               const data = contextMenu.type === 'section'
                 ? sections.find(s => s.id === contextMenu.id)
-                : sections.find(s => s.id === contextMenu.parentId)?.items.find(i => i.id === contextMenu.id);
+                : sections.flatMap(s => s.items).find(i => i.id === contextMenu.id);
               setDeleteConfig({ open: true, type: contextMenu.type, id: contextMenu.id, name: data?.title || '', parentId: contextMenu.parentId });
               setContextMenu(null);
             }}

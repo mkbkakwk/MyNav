@@ -4,6 +4,8 @@ export interface LinkItem {
   description: string;
   icon: string; // Emoji character
   url: string;
+  pinned?: boolean;     // 置顶/收藏:显示在"常用站点"视图中
+  pinnedIndex?: number; // 置顶卡在"常用站点"视图末尾的排序序号
 }
 
 export interface SectionData {

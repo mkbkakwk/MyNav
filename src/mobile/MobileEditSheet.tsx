@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Trash2, Loader2 } from 'lucide-react';
+import { X, Save, Trash2, Loader2, Star } from 'lucide-react';
 import type { LinkItem, SectionData } from '../types';
 import { fetchWebsiteMetadata } from '../utils/metadata';
 import { getFaviconUrl } from '../utils/favicon';
@@ -18,9 +18,11 @@ interface MobileEditSheetProps {
     onClose: () => void;
     onSave: (data: { title: string; description: string; icon: string; url: string }) => void;
     onDelete?: () => void;
+    onTogglePin?: () => void;
+    pinned?: boolean;
 }
 
-const MobileEditSheet: React.FC<MobileEditSheetProps> = ({ target, onClose, onSave, onDelete }) => {
+const MobileEditSheet: React.FC<MobileEditSheetProps> = ({ target, onClose, onSave, onDelete, onTogglePin, pinned }) => {
     const isCard = target.type === 'card';
     const [title, setTitle] = useState(target.card?.title || target.section?.title || '');
     const [description, setDescription] = useState(target.card?.description || '');
@@ -127,6 +129,14 @@ const MobileEditSheet: React.FC<MobileEditSheetProps> = ({ target, onClose, onSa
                 </div>
 
                 <div className="flex gap-3 mt-5">
+                    {target.mode === 'edit' && isCard && onTogglePin && (
+                        <button
+                            onClick={onTogglePin}
+                            className={`px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-1.5 ${pinned ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
+                        >
+                            <Star size={16} className={pinned ? 'fill-amber-400 text-amber-400' : ''} /> {pinned ? '取消置顶' : '置顶'}
+                        </button>
+                    )}
                     {target.mode === 'edit' && onDelete && (
                         <button onClick={onDelete}
                             className="px-4 py-3 rounded-xl bg-red-500/10 text-red-500 font-bold text-sm flex items-center gap-1.5">

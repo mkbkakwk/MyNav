@@ -9,6 +9,7 @@ import type { EditTarget } from './MobileEditSheet';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { sortSections, getSortMode, setSortMode, nextSortMode } from '../utils/clickStats';
 import type { SortMode } from '../utils/clickStats';
+import { togglePin, mergePinnedSection } from '../utils/pinned';
 
 interface MobileHomeProps {
     sections: SectionData[];
@@ -28,7 +29,7 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections }) => {
     // Card display sort: default / frequent / recent
     const [sortMode, setSortModeState] = useState<SortMode>(() => getSortMode());
     const [sortTip, setSortTip] = useState('');
-    const displaySections = sortSections(sections, sortMode);
+    const displaySections = mergePinnedSection(sortSections(sections, sortMode));
 
     const cycleSortMode = () => {
         const next = nextSortMode(sortMode);
@@ -172,6 +173,10 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections }) => {
                     target={editTarget}
                     onClose={() => setEditTarget(null)}
                     onSave={handleSave}
+                    onTogglePin={editTarget.type === 'card' && editTarget.card
+                        ? () => setSections(prev => togglePin(prev, editTarget.card!.id))
+                        : undefined}
+                    pinned={editTarget.type === 'card' ? !!editTarget.card?.pinned : false}
                     onDelete={editTarget.mode === 'edit'
                         ? () => setConfirmDelete({
                             type: editTarget.type,

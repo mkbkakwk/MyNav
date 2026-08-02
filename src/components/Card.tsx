@@ -93,6 +93,9 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu, isD
           {item.description}
         </p>
       </div>
+      {item.pinned && (
+        <span className="absolute top-1.5 right-1.5 text-amber-400 text-xs drop-shadow z-20 select-none" title="已置顶">⭐</span>
+      )}
     </a>
   );
 };
