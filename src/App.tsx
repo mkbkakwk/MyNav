@@ -1071,26 +1071,22 @@ const App: React.FC = () => {
             {sortMode === 'default' ? <ListOrdered size={24} /> : sortMode === 'frequent' ? <Flame size={24} /> : <Clock size={24} />}
           </button>
 
-          {/* Sync status dot */}
-          <button
-            onClick={syncStatus === 'error' ? retrySync : undefined}
-            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-50 transform ring-1 ring-slate-900/5 dark:ring-white/10 scale-50 group-hover:scale-100 bg-white dark:bg-slate-700 hover:scale-110`}
-            title={syncStatus === 'idle' ? '尚未同步' : syncStatus === 'syncing' ? '同步中...' : syncStatus === 'success' ? `已同步 ${formatAgo(lastSyncAt)}` : `同步失败:${syncError || ''}(点击重试)`}
-          >
-            <span className={`w-3.5 h-3.5 rounded-full ${syncStatus === 'idle' ? 'bg-slate-400' : syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' : syncStatus === 'success' ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
-          </button>
-
           {/* Theme Toggle Button */}
           <div className={`transform transition-transform duration-500 delay-75 ${isSortMode ? 'scale-100' : 'scale-50 group-hover:scale-100'}`}>
             <ThemeToggle />
           </div>
         </div>
 
-        {/* Main Trigger Button (Settings) */}
+        {/* Main Trigger Button (Settings) — ring color mirrors sync status */}
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className={`w-14 h-14 rounded-full bg-indigo-500 text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all ring-4 ring-indigo-500/20 
-            ${isSortMode ? 'rotate-90' : 'group-hover:rotate-90'}`}
+          title={syncStatus === 'idle' ? '设置' : syncStatus === 'syncing' ? '同步中...' : syncStatus === 'success' ? `已同步 ${formatAgo(lastSyncAt)}` : `同步失败:${syncError || ''}(点此进入设置重试)`}
+          className={`w-14 h-14 rounded-full bg-indigo-500 text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all ${
+            syncStatus === 'idle' ? 'ring-4 ring-indigo-500/20'
+              : syncStatus === 'syncing' ? 'ring-4 ring-amber-400/50 animate-pulse'
+              : syncStatus === 'success' ? 'ring-4 ring-emerald-500/50'
+              : 'ring-4 ring-red-500/50 animate-pulse'
+          } ${isSortMode ? 'rotate-90' : 'group-hover:rotate-90'}`}
           aria-label="Toggle Menu"
         >
           <SettingsIcon size={24} />
