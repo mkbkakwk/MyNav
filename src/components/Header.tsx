@@ -220,6 +220,13 @@ const Header: React.FC = () => {
   } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  // External "/" shortcut (dispatched by App) focuses the search input.
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onFocusSearch = () => searchInputRef.current?.focus();
+    window.addEventListener('nav_focus_search', onFocusSearch);
+    return () => window.removeEventListener('nav_focus_search', onFocusSearch);
+  }, []);
 
   // Derived state
   const activeCategory = categoriesData.find(c => c.id === activeCategoryId) || categoriesData[0];
@@ -506,6 +513,7 @@ const Header: React.FC = () => {
           {/* Top Bar Area */}
           <div className="relative flex items-center w-full bg-inherit">
             <input
+              ref={searchInputRef}
               className={`w-full pl-8 pr-20 bg-transparent border-none text-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-0 outline-none ${isScrolled ? 'py-3' : 'py-5'}`}
               placeholder={`在 ${selectedEngineName} 中搜索...`}
               type="text"

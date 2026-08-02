@@ -553,6 +553,14 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // "/" focuses the desktop header search box (unless already typing).
+      const target = e.target as HTMLElement | null;
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (e.key === '/' && !typing) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('nav_focus_search'));
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setSearchOpen(true);
