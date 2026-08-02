@@ -316,20 +316,35 @@ const App: React.FC = () => {
     };
   }, [sections, syncSettings, syncAuthorized]);
 
-  // 3. Click-stats flush: debounced 30s so frequent clicks don't hammer the sync
-  //    and don't keep resetting the "上次同步" timestamp.
-  //    Guarded by the same authorization as the debounced save — an unauthorized
-  //    session must NEVER push local data over the remote.
+  // 3. Click-stats flush: throttled to 30s — the FIRST stats change schedules a
+  //    flush, further clicks within the window do NOT reset it. Guarded by the
+  //    same authorization as the debounced save: an unauthorized session must
+  //    NEVER push local data over the remote. NOTE: cleanup must NOT clear the
+  //    timer — React runs cleanup on every stats change (setStats new object),
+  //    which would turn this back into a never-firing trailing debounce.
   const statsFlushRef = useRef<any>(null);
+  const statsFlushPendingRef = useRef(false);
   useEffect(() => {
-    if (statsFlushRef.current) clearTimeout(statsFlushRef.current);
-    if (syncSettings.enabled && syncAuthorized) {
-      statsFlushRef.current = setTimeout(() => runSyncRef.current(), 30000);
-    }
-    return () => {
+    if (!(syncSettings.enabled && syncAuthorized)) {
+      // Authorization lost (or never granted): cancel any scheduled flush.
       if (statsFlushRef.current) clearTimeout(statsFlushRef.current);
-    };
+      statsFlushPendingRef.current = false;
+      return;
+    }
+    if (!statsFlushPendingRef.current) {
+      statsFlushPendingRef.current = true;
+      statsFlushRef.current = setTimeout(() => {
+        statsFlushPendingRef.current = false;
+        runSyncRef.current();
+      }, 30000);
+    }
   }, [stats, syncSettings.enabled, syncAuthorized]);
+
+  // Unmount-only cleanup (independent of stats changes).
+  useEffect(() => () => {
+    if (statsFlushRef.current) clearTimeout(statsFlushRef.current);
+    statsFlushPendingRef.current = false;
+  }, []);
 
   // Initial Remote Data Sync
   useEffect(() => {
