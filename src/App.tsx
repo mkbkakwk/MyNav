@@ -294,7 +294,7 @@ const App: React.FC = () => {
     setSyncStatus('syncing');
     saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
   };
-  const runSyncRef = useRef(runSync);
+  const runSyncRef = React.useRef(runSync);
   runSyncRef.current = runSync;
 
   // Persistence & Source Sync
@@ -322,8 +322,8 @@ const App: React.FC = () => {
   //    NEVER push local data over the remote. NOTE: cleanup must NOT clear the
   //    timer — React runs cleanup on every stats change (setStats new object),
   //    which would turn this back into a never-firing trailing debounce.
-  const statsFlushRef = useRef<any>(null);
-  const statsFlushPendingRef = useRef(false);
+  const statsFlushRef = React.useRef<any>(null);
+  const statsFlushPendingRef = React.useRef(false);
   useEffect(() => {
     if (!(syncSettings.enabled && syncAuthorized)) {
       // Authorization lost (or never granted): cancel any scheduled flush.
