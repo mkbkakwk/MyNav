@@ -328,6 +328,39 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
         <div className="px-4 pt-6 pb-10 max-w-3xl mx-auto">
             {/* One group in normal flow from the top: categories → search bar → engines */}
             <div className="flex flex-col">
+                {/* Local results ABOVE the search bar (suggestions expand inside
+                    the bar downward, so the two never overlap) */}
+                {q && (
+                    <div className="mb-4 space-y-2.5">
+                        {matches.length === 0 ? (
+                            <p className="text-center text-sm text-slate-400 py-6">本地没有匹配的站点</p>
+                        ) : (
+                            <>
+                                <p className="text-xs text-slate-400 font-medium">本地站点 · {matches.length} 个结果</p>
+                                {matches.map(m => (
+                                    <a
+                                        key={m.card.id}
+                                        href={m.card.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-3 p-3 rounded-2xl bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 active:scale-[0.98] transition-transform"
+                                    >
+                                        <div className="w-10 h-10 rounded-xl bg-white/50 dark:bg-slate-700/50 flex items-center justify-center overflow-hidden shrink-0">
+                                            <IconPreview icon={m.card.icon} siteUrl={m.card.url} size={20} className="w-full h-full" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{m.card.title}</p>
+                                            <p className="text-[11px] text-slate-400 truncate">
+                                                {m.sectionIcon} {m.sectionTitle}
+                                                {m.card.description ? ` · ${m.card.description}` : ''}
+                                            </p>
+                                        </div>
+                                    </a>
+                                ))}
+                            </>
+                        )}
+                    </div>
+                )}
                 {/* Categories: the + button stays visible even when empty */}
                 <div ref={catRef}>
                     <div className="flex gap-2 flex-wrap justify-center">
@@ -467,39 +500,6 @@ const MobileSearch: React.FC<MobileSearchProps> = ({ sections }) => {
                     )}
                 </div>
             </div>
-
-            {/* Local results */}
-            {q && (
-                <div className="mt-5 space-y-4">
-                    {matches.length === 0 ? (
-                        <p className="text-center text-sm text-slate-400 py-10">本地没有匹配的站点</p>
-                    ) : (
-                        <>
-                            <p className="text-xs text-slate-400 font-medium">本地站点 · {matches.length} 个结果</p>
-                            {matches.map(m => (
-                                <a
-                                    key={m.card.id}
-                                    href={m.card.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-3 p-3 rounded-2xl bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 active:scale-[0.98] transition-transform"
-                                >
-                                    <div className="w-10 h-10 rounded-xl bg-white/50 dark:bg-slate-700/50 flex items-center justify-center overflow-hidden shrink-0">
-                                        <IconPreview icon={m.card.icon} siteUrl={m.card.url} size={20} className="w-full h-full" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{m.card.title}</p>
-                                        <p className="text-[11px] text-slate-400 truncate">
-                                            {m.sectionIcon} {m.sectionTitle}
-                                            {m.card.description ? ` · ${m.card.description}` : ''}
-                                        </p>
-                                    </div>
-                                </a>
-                            ))}
-                        </>
-                    )}
-                </div>
-            )}
 
             {/* Chip action menu (long-press a category/engine chip): edit / delete */}
             {chipMenu && createPortal(

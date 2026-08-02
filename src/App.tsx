@@ -18,6 +18,7 @@ import IconPreview from './components/IconPreview';
 import { useWindowSize } from './hooks/useWindowSize';
 import { useIsMobile } from './hooks/useIsMobile';
 import MobileApp from './mobile/MobileApp';
+import SearchPalette from './components/SearchPalette';
 
 
 const Background: React.FC = () => (
@@ -465,6 +466,20 @@ const App: React.FC = () => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, type, id, parentId });
   };
+
+  // Desktop command palette state (Ctrl+K)
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const handleDelete = () => {
     if (!deleteConfig) return;
@@ -944,6 +959,8 @@ const App: React.FC = () => {
           <Unlock size={18} /> 排序模式已开启：此时可拖拽，点击跳转已禁用
         </div>
       )}
+
+      {searchOpen && <SearchPalette sections={sections} onClose={() => setSearchOpen(false)} />}
     </>
   );
 };
