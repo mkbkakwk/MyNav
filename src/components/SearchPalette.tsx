@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search as SearchIcon, X } from 'lucide-react';
 import type { SectionData } from '../types';
 import IconPreview from './IconPreview';
+import { recordClick } from '../utils/clickStats';
 
 interface SearchPaletteProps {
     sections: SectionData[];
@@ -98,7 +99,7 @@ const SearchPalette: React.FC<SearchPaletteProps> = ({ sections, onClose }) => {
                             href={m.card.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={onClose}
+                            onClick={() => { recordClick(m.card.id); onClose(); }}
                             onMouseEnter={() => setActiveIndex(i)}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
                                 i === activeIndex ? 'bg-primary/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800'

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { LinkItem } from '../types';
 import IconPreview from './IconPreview';
+import { recordClick } from '../utils/clickStats';
 
 interface CardProps {
   item: LinkItem;
@@ -56,7 +57,10 @@ const Card: React.FC<CardProps> = ({ item, index, isSortMode, onContextMenu, isD
       target={isSortMode || isDragOverlay ? undefined : "_blank"}
       rel={isSortMode || isDragOverlay ? undefined : "noopener noreferrer"}
       onContextMenu={onContextMenu}
-      onClick={(e) => (isSortMode || isDragOverlay) && e.preventDefault()}
+      onClick={(e) => {
+        if (isSortMode || isDragOverlay) { e.preventDefault(); return; }
+        recordClick(item.id);
+      }}
       style={{
         transitionDelay: isVisible && !isDragOverlay ? `${(index % 8) * 50}ms` : '0ms',
         animationDelay: isSortMode && !isDragOverlay ? `${(index % 7) * -0.13}s` : '0s',

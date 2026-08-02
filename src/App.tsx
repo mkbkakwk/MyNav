@@ -9,10 +9,12 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon } from 'lucide-react';
+import { Edit2, Trash2, Plus, X, Lock, Unlock, Settings as SettingsIcon, ListOrdered, Flame, Clock } from 'lucide-react';
 import { serializeConstants, saveToSource, fetchRemoteData } from './utils/serialization';
 import { getFaviconUrl, getFaviconUrls } from './utils/favicon';
 import { fetchWebsiteMetadata } from './utils/metadata';
+import { recordClick, sortSections, getSortMode, setSortMode, nextSortMode } from './utils/clickStats';
+import type { SortMode } from './utils/clickStats';
 import Settings from './components/Settings';
 import IconPreview from './components/IconPreview';
 import { useWindowSize } from './hooks/useWindowSize';
@@ -469,6 +471,15 @@ const App: React.FC = () => {
 
   // Desktop command palette state (Ctrl+K)
   const [searchOpen, setSearchOpen] = useState(false);
+  // Card display sort: default / frequent (clicks) / recent (last click)
+  const [sortMode, setSortModeState] = useState<SortMode>(() => getSortMode());
+  const displaySections = sortSections(sections, sortMode);
+
+  const cycleSortMode = () => {
+    const next = nextSortMode(sortMode);
+    setSortModeState(next);
+    setSortMode(next);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -528,8 +539,8 @@ const App: React.FC = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-              {sections.map((section, index) => (
+            <SortableContext items={displaySections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+              {displaySections.map((section, index) => (
                 <section key={section.id} id={section.id} className="scroll-mt-60">
                   <SortableWrapper id={section.id} disabled={!isSortMode}>
                     <div
@@ -926,6 +937,15 @@ const App: React.FC = () => {
             title={isSortMode ? '退出排序模式' : '进入排序模式'}
           >
             {isSortMode ? <Unlock size={24} /> : <Lock size={24} />}
+          </button>
+
+          {/* Card display sort (default → frequent → recent) */}
+          <button
+            onClick={cycleSortMode}
+            className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-500 delay-75 transform ring-1 ring-slate-900/5 dark:ring-white/10 ${sortMode !== 'default' ? 'bg-indigo-500 text-white scale-110' : 'scale-50 group-hover:scale-100 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:scale-110'}`}
+            title={sortMode === 'default' ? '卡片排序:默认(点击切换)' : sortMode === 'frequent' ? '卡片排序:常用优先(点击切换)' : '卡片排序:最近使用(点击切换)'}
+          >
+            {sortMode === 'default' ? <ListOrdered size={24} /> : sortMode === 'frequent' ? <Flame size={24} /> : <Clock size={24} />}
           </button>
 
           {/* Theme Toggle Button */}

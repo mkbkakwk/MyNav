@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, ListOrdered, Flame, Clock } from 'lucide-react';
 import type { SectionData } from '../types';
 import ThemeToggle from '../components/ThemeToggle';
 import MobileCard from './MobileCard';
 import MobileEditSheet from './MobileEditSheet';
 import type { EditTarget } from './MobileEditSheet';
 import { useWindowSize } from '../hooks/useWindowSize';
+import { sortSections, getSortMode, setSortMode, nextSortMode } from '../utils/clickStats';
+import type { SortMode } from '../utils/clickStats';
 
 interface MobileHomeProps {
     sections: SectionData[];
@@ -23,6 +25,19 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections }) => {
     // Long-press menu on section titles
     const [sectionMenu, setSectionMenu] = useState<{ sectionId: string } | null>(null);
     const pressTimer = useRef<any>(null);
+    // Card display sort: default / frequent / recent
+    const [sortMode, setSortModeState] = useState<SortMode>(() => getSortMode());
+    const [sortTip, setSortTip] = useState('');
+    const displaySections = sortSections(sections, sortMode);
+
+    const cycleSortMode = () => {
+        const next = nextSortMode(sortMode);
+        setSortModeState(next);
+        setSortMode(next);
+        // Same hint as the desktop title tooltip, as a toast on mobile.
+        setSortTip(next === 'default' ? '卡片排序:默认' : next === 'frequent' ? '卡片排序:常用优先' : '卡片排序:最近使用');
+        setTimeout(() => setSortTip(''), 2000);
+    };
 
     const startSectionPress = (sectionId: string) => {
         pressTimer.current = setTimeout(() => setSectionMenu({ sectionId }), 400);
@@ -72,7 +87,16 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections }) => {
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">MyNav</h1>
                     <p className="text-xs text-slate-400 mt-0.5">你的专属导航站</p>
                 </div>
-                <ThemeToggle />
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={cycleSortMode}
+                        className={`w-9 h-9 rounded-full bg-white/80 dark:bg-slate-800/80 flex items-center justify-center transition-colors ${sortMode !== 'default' ? 'text-primary' : 'text-slate-500'}`}
+                        title={sortMode === 'default' ? '卡片排序:默认' : sortMode === 'frequent' ? '卡片排序:常用优先' : '卡片排序:最近使用'}
+                    >
+                        {sortMode === 'default' ? <ListOrdered size={18} /> : sortMode === 'frequent' ? <Flame size={18} /> : <Clock size={18} />}
+                    </button>
+                    <ThemeToggle />
+                </div>
             </header>
 
             {/* Sections */}
@@ -90,7 +114,7 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections }) => {
                 </div>
             )}
 
-            {sections.map(section => (
+            {displaySections.map(section => (
                 <section key={section.id}>
                     {/* Section title: long-press for actions (add / edit / delete) */}
                     <h2
@@ -133,6 +157,13 @@ const MobileHome: React.FC<MobileHomeProps> = ({ sections, setSections }) => {
                     <Plus size={22} /> 添加分区
                 </button>
             </div>
+
+            {/* Sort-mode toast (same wording as the desktop tooltip) */}
+            {sortTip && (
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] px-4 py-2 rounded-full bg-slate-800/90 text-white text-xs font-medium shadow-lg backdrop-blur animate-in fade-in pointer-events-none whitespace-nowrap">
+                    {sortTip}
+                </div>
+            )}
 
             {/* Edit / Add sheet */}
             {editTarget && (

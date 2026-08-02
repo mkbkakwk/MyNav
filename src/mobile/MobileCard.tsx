@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import type { LinkItem } from '../types';
 import IconPreview from '../components/IconPreview';
+import { recordClick } from '../utils/clickStats';
 
 interface MobileCardProps {
     card: LinkItem;
@@ -33,7 +34,9 @@ const MobileCard: React.FC<MobileCardProps> = ({ card, onLongPress }) => {
         if (longPressed.current) {
             e.preventDefault();
             longPressed.current = false;
+            return;
         }
+        recordClick(card.id);
     };
 
     return (
@@ -48,7 +51,7 @@ const MobileCard: React.FC<MobileCardProps> = ({ card, onLongPress }) => {
             onMouseUp={clearPress}
             onMouseLeave={clearPress}
             onClick={handleClick}
-            className="flex flex-col gap-1.5 p-2.5 rounded-2xl backdrop-blur-xl border border-white/40 dark:border-white/10 bg-glass-gradient dark:bg-slate-900/60 shadow-clay dark:shadow-clay-dark active:scale-95 transition-transform select-none"
+            className="flex flex-col gap-1.5 p-2.5 rounded-2xl backdrop-blur-xl border border-white/40 dark:border-white/10 bg-glass-gradient dark:bg-slate-900/60 shadow-clay dark:shadow-clay-dark active:scale-[0.93] active:bg-white/70 dark:active:bg-slate-700/70 transition-all duration-150 select-none"
         >
             <div className="flex items-center gap-1.5 min-w-0">
                 <div className="w-4 h-4 rounded bg-white/50 dark:bg-slate-700/50 flex items-center justify-center overflow-hidden shrink-0">
