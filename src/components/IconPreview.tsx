@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getCachedIcon, setCachedIcon } from '../utils/faviconCache';
 
 interface IconPreviewProps {
     icon: string;
@@ -53,12 +54,7 @@ const IconPreview: React.FC<IconPreviewProps> = ({
 
         return (
             <div className={`flex items-center justify-center overflow-hidden ${className}`}>
-                <img
-                    src={displayUrl}
-                    alt=""
-                    className={imgClassName}
-                    onError={handleImageError}
-                />
+                <IconImage displayUrl={displayUrl} imgClassName={imgClassName} onError={handleImageError} />
             </div>
         );
     }
@@ -70,6 +66,63 @@ const IconPreview: React.FC<IconPreviewProps> = ({
                 {icon}
             </span>
         </div>
+    );
+};
+
+/** Image with IndexedDB-cache-first loading (shared by desktop & mobile). */
+const IconImage: React.FC<{
+    displayUrl: string;
+    imgClassName: string;
+    onError: () => void;
+}> = ({ displayUrl, imgClassName, onError }) => {
+    const [resolvedSrc, setResolvedSrc] = useState<string | null>(null);
+    const [cacheMiss, setCacheMiss] = useState(false);
+
+    // Try the cache first; fall back to network when missing/expired.
+    useEffect(() => {
+        let cancelled = false;
+        setResolvedSrc(null);
+        setCacheMiss(false);
+        getCachedIcon(displayUrl).then(cached => {
+            if (cancelled) {
+                if (cached) URL.revokeObjectURL(cached);
+                return;
+            }
+            if (cached) {
+                setResolvedSrc(cached);
+            } else {
+                setCacheMiss(true);
+            }
+        });
+        return () => { cancelled = true; };
+    }, [displayUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Revoke object URLs we created (both unused probes and the active one).
+    useEffect(() => {
+        const active = resolvedSrc;
+        return () => {
+            if (active && active.startsWith('blob:')) URL.revokeObjectURL(active);
+        };
+    }, [resolvedSrc]);
+
+    const src = resolvedSrc ?? displayUrl;
+
+    return (
+        <img
+            src={src}
+            alt=""
+            className={imgClassName}
+            onError={onError}
+            onLoad={() => {
+                // Cache successful network loads for next time (blob copy).
+                if (cacheMiss && !src.startsWith('blob:')) {
+                    fetch(displayUrl)
+                        .then(r => r.blob())
+                        .then(b => setCachedIcon(displayUrl, b))
+                        .catch(() => { /* non-fatal */ });
+                }
+            }}
+        />
     );
 };
 
