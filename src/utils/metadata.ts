@@ -8,8 +8,9 @@
  *                       then the HTML is parsed locally with DOMParser
  *  4. Fallback        — domain-based icon services only
  *
- * Caching is tiered and persistent (localStorage): full results 7 days,
- * icons-only 1 hour, failures never cached.
+ * Successful metadata is cached in localStorage for 7 days. Icon-only
+ * fallbacks are not cached so a transient provider failure can be retried
+ * immediately the next time the user enters the URL.
  */
 
 export interface WebsiteMetadata {
@@ -19,12 +20,11 @@ export interface WebsiteMetadata {
 }
 
 // ---------------------------------------------------------------------------
-// Cache layer (tiered, persistent)
+// Cache layer (persistent)
 // ---------------------------------------------------------------------------
 
-//  - 'full':    title/description fetched successfully → long TTL (7 days)
-//  - 'partial': only icons available → short TTL (1 hour), retry soon
-//  - failures are NEVER cached (a failed fetch must be retried immediately)
+// `partial` is retained in the type only to migrate cache entries written by
+// older versions. New versions never create partial entries.
 interface CacheEntry {
     data: WebsiteMetadata;
     timestamp: number;
@@ -34,14 +34,27 @@ interface CacheEntry {
 const metadataCache = new Map<string, CacheEntry>();
 const CACHE_KEY = 'nav_metadata_cache_v1';
 const FULL_TTL = 7 * 24 * 60 * 60 * 1000;   // 7 days
-const PARTIAL_TTL = 60 * 60 * 1000;         // 1 hour
 
 // Load persisted cache once at startup.
 try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) {
         const parsed = JSON.parse(raw) as Record<string, CacheEntry>;
-        Object.entries(parsed).forEach(([url, entry]) => metadataCache.set(url, entry));
+        let removedLegacyPartial = false;
+        Object.entries(parsed).forEach(([url, entry]) => {
+            if (entry.quality === 'full') {
+                metadataCache.set(url, entry);
+            } else {
+                removedLegacyPartial = true;
+            }
+        });
+
+        // Remove icon-only entries created by older versions immediately so
+        // users do not have to wait for their old one-hour TTL to expire.
+        if (removedLegacyPartial) {
+            const fullEntries = Object.fromEntries(metadataCache.entries());
+            localStorage.setItem(CACHE_KEY, JSON.stringify(fullEntries));
+        }
     }
 } catch (e) {
     console.warn('[Metadata] Failed to load cache:', e);
@@ -61,16 +74,16 @@ const persistCache = () => {
 const getCached = (url: string): CacheEntry | null => {
     const cached = metadataCache.get(url);
     if (!cached) return null;
-    const ttl = cached.quality === 'full' ? FULL_TTL : PARTIAL_TTL;
-    if (Date.now() - cached.timestamp >= ttl) {
+    if (cached.quality !== 'full' || Date.now() - cached.timestamp >= FULL_TTL) {
         metadataCache.delete(url);
+        persistCache();
         return null;
     }
     return cached;
 };
 
-const setCached = (url: string, data: WebsiteMetadata, quality: 'full' | 'partial') => {
-    metadataCache.set(url, { data, timestamp: Date.now(), quality });
+const setCached = (url: string, data: WebsiteMetadata) => {
+    metadataCache.set(url, { data, timestamp: Date.now(), quality: 'full' });
     persistCache();
 };
 
@@ -346,13 +359,13 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
 
         if (microlink) {
             console.log('[Metadata] Success via Microlink');
-            setCached(url, microlink, 'full');
+            setCached(url, microlink);
             return microlink;
         }
 
         if (jina) {
             console.log('[Metadata] Success via Jina Reader');
-            setCached(url, jina, 'full');
+            setCached(url, jina);
             return jina;
         }
 
@@ -361,7 +374,7 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
             const parsed = parseHtml(html, url);
             if (parsed && (parsed.title || parsed.description)) {
                 console.log(`[Metadata] Success via ${htmlFetch.source} + DOMParser (full)`);
-                setCached(url, parsed, 'full');
+                setCached(url, parsed);
                 return parsed;
             }
 
@@ -370,24 +383,26 @@ export const fetchWebsiteMetadata = async (url: string, externalSignal?: AbortSi
             const structured = await fetchStructured(url, html, signal);
             if (structured) {
                 console.log(`[Metadata] Success via oEmbed/RSS (${htmlFetch.source})`);
-                setCached(url, structured, 'full');
+                setCached(url, structured);
                 return structured;
             }
 
             if (parsed) {
-                // Icons only — short cache so it can retry soon.
-                console.log(`[Metadata] Icons only via ${htmlFetch.source} (partial)`);
-                setCached(url, parsed, 'partial');
+                // Do not cache icons-only results. The UI treats missing title
+                // and description as a failed metadata fetch, so caching here
+                // would turn one transient provider failure into an hour-long
+                // failure for every retry of the same URL.
+                console.log(`[Metadata] Icons only via ${htmlFetch.source}; not cached`);
                 return parsed;
             }
         }
 
-        // Final fallback: domain icons only (short cache so it can retry soon).
+        // Final fallback: domain icons only. Never cache this result so the
+        // next attempt can retry all metadata providers immediately.
         console.log('[Metadata] Falling back to domain-based icons...');
         const metadata: WebsiteMetadata = { icons: domainIcons(url), title: undefined, description: undefined };
-        setCached(url, metadata, 'partial');
         return metadata;
-    } catch (error: any) {
+    } catch (error) {
         console.error('[Metadata] Fatal error:', error);
         return null;
     } finally {
