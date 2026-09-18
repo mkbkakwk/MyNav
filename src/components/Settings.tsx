@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Github, Save, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
+import { X, Github, Save, CheckCircle2, Download, Upload, AlertTriangle } from 'lucide-react';
 import type { SyncSettings } from '../types';
 
 interface SettingsProps {
@@ -8,12 +8,13 @@ interface SettingsProps {
     onSettingsChange: (settings: SyncSettings) => void;
     onPullRemote: () => Promise<{ ok: boolean; message: string }>;
     onKeepLocal: () => void;
+    onSyncNow: () => void;
     syncAuthorized: boolean;
     /** Mobile: render as a bottom sheet so it fits small screens. */
     isMobile?: boolean;
 }
 
-const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, onPullRemote, onKeepLocal, syncAuthorized, isMobile = false }) => {
+const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, onPullRemote, onKeepLocal, onSyncNow, syncAuthorized, isMobile = false }) => {
     const [settings, setSettings] = useState<SyncSettings>(() => {
         const saved = localStorage.getItem('nav_sync_settings');
         return saved ? JSON.parse(saved) : { token: '', owner: '', repo: '', enabled: false };
@@ -32,6 +33,7 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, 
     // Always-available pull button state (two-step confirm + inline result).
     const [confirmPull, setConfirmPull] = useState(false);
     const [pullState, setPullState] = useState<{ loading: boolean; message: string; isError: boolean }>({ loading: false, message: '', isError: false });
+    const [syncRequested, setSyncRequested] = useState(false);
 
     const handleSave = () => {
         localStorage.setItem('nav_sync_settings', JSON.stringify(settings));
@@ -75,6 +77,12 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, 
         setPullState({ loading: true, message: '', isError: false });
         const result = await onPullRemote();
         setPullState({ loading: false, message: result.message, isError: !result.ok });
+    };
+
+    const handleSyncNow = () => {
+        onSyncNow();
+        setSyncRequested(true);
+        setTimeout(() => setSyncRequested(false), 2000);
     };
 
     const canPull = settings.enabled && settings.token && settings.owner && settings.repo;
@@ -123,7 +131,7 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, 
                                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white"
                                     />
                                     <p className="mt-2 text-[10px] text-slate-400 ml-1">
-                                        需要权限: repo (用于更新 src/constants.ts)
+                                        需要权限: repo (用于更新 nav-data.json)
                                     </p>
                                 </div>
 
@@ -164,6 +172,21 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, onSettingsChange, 
                                         className={`w-12 h-6 rounded-full transition-colors relative ${settings.enabled ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                                     >
                                         <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.enabled ? 'translate-x-6' : ''}`} />
+                                    </button>
+                                </div>
+
+                                <div className="p-5 bg-slate-50 dark:bg-slate-800/30 rounded-2xl space-y-3">
+                                    <div>
+                                        <span className="block text-sm font-bold text-slate-900 dark:text-white">上传本地数据</span>
+                                        <span className="text-[10px] text-slate-400">通常会自动批量同步；需要时可立即刷新</span>
+                                    </div>
+                                    <button
+                                        onClick={handleSyncNow}
+                                        disabled={!canPull || !syncAuthorized}
+                                        className="w-full py-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-500/20 disabled:opacity-40 transition-all"
+                                    >
+                                        {syncRequested ? <CheckCircle2 size={16} /> : <Upload size={16} />}
+                                        {syncRequested ? '已开始同步' : '立即同步到 GitHub'}
                                     </button>
                                 </div>
 

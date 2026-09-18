@@ -23,6 +23,13 @@ import { useIsMobile } from './hooks/useIsMobile';
 import MobileApp from './mobile/MobileApp';
 import SearchPalette from './components/SearchPalette';
 
+const CONTENT_SYNC_IDLE_MS = 30 * 1000;
+const CONTENT_SYNC_MAX_WAIT_MS = 5 * 60 * 1000;
+const STATS_SYNC_INTERVAL_MS = 30 * 60 * 1000;
+const SYNC_DIRTY_KEY = 'nav_cloud_sync_dirty_v1';
+
+const isLocalRuntime = () => window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
 
 const Background: React.FC = () => (
   <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
@@ -182,15 +189,6 @@ const App: React.FC = () => {
     }
   };
 
-  const retrySync = () => {
-    const categoriesJson = localStorage.getItem('nav_search_categories_v2');
-    if (!categoriesJson) return;
-    const categories = JSON.parse(categoriesJson);
-    const sourceCode = serializeConstants(sections, categories);
-    setSyncStatus('syncing');
-    saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
-  };
-
   const formatAgo = (ts: number | null): string => {
     if (!ts) return '';
     const s = Math.floor((Date.now() - ts) / 1000);
@@ -248,7 +246,19 @@ const App: React.FC = () => {
   const dynamicGap = numCols > 1 ? (availableGridWidth - numCols * cardWidth) / (numCols - 1) : minGap;
 
   // Sync & Persistence Refs
-  const syncTimerRef = React.useRef<any>(null);
+  const syncIdleTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncMaxTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statsSyncTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncDirtyRef = React.useRef(localStorage.getItem(SYNC_DIRTY_KEY) === '1');
+  const syncRevisionRef = React.useRef(0);
+  const syncInFlightRef = React.useRef(false);
+  const syncQueuedRef = React.useRef(false);
+  const previousSectionsRef = React.useRef(sections);
+  const previousStatsRef = React.useRef(stats);
+  const performSyncRef = React.useRef<() => Promise<void>>(async () => undefined);
+  const flushSyncRef = React.useRef<(force?: boolean) => void>(() => undefined);
+  const scheduleContentSyncRef = React.useRef<() => void>(() => undefined);
+  const scheduleStatsSyncRef = React.useRef<() => void>(() => undefined);
   const metadataFetchRef = React.useRef<AbortController | null>(null);
   const metadataDebounceRef = React.useRef<any>(null);
 
@@ -282,20 +292,95 @@ const App: React.FC = () => {
 
   const handleKeepLocal = () => {
     setSyncAuthorized(true);
+    // The user explicitly chose local data as the source of truth. Queue one
+    // batched upload instead of committing immediately.
+    scheduleContentSyncRef.current();
   };
 
-  // Shared sync runner (used by debounced saves, header updates, stats flush).
-  // Kept in a ref so late timers always call the latest closure.
-  const runSync = () => {
+  const clearScheduledSyncTimers = () => {
+    if (syncIdleTimerRef.current) clearTimeout(syncIdleTimerRef.current);
+    if (syncMaxTimerRef.current) clearTimeout(syncMaxTimerRef.current);
+    if (statsSyncTimerRef.current) clearTimeout(statsSyncTimerRef.current);
+    syncIdleTimerRef.current = null;
+    syncMaxTimerRef.current = null;
+    statsSyncTimerRef.current = null;
+  };
+
+  const markSyncDirty = () => {
+    syncDirtyRef.current = true;
+    syncRevisionRef.current += 1;
+    try { localStorage.setItem(SYNC_DIRTY_KEY, '1'); } catch { /* ignore */ }
+  };
+
+  // One runner is shared by content edits, search settings, click stats and
+  // manual retries. It always reads the latest React state through the ref.
+  const performSync = async () => {
+    if (syncInFlightRef.current) {
+      syncQueuedRef.current = true;
+      return;
+    }
+
     const categoriesJson = localStorage.getItem('nav_search_categories_v2');
     if (!categoriesJson) return;
     const categories = JSON.parse(categoriesJson);
     const sourceCode = serializeConstants(sections, categories);
+    const startedRevision = syncRevisionRef.current;
+
+    syncInFlightRef.current = true;
     setSyncStatus('syncing');
-    saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
+    try {
+      const result = await saveToSource(sourceCode, syncSettings, sections, categories, stats);
+      if (result.ok && startedRevision === syncRevisionRef.current) {
+        syncDirtyRef.current = false;
+        try { localStorage.removeItem(SYNC_DIRTY_KEY); } catch { /* ignore */ }
+      }
+      updateSyncState(result);
+    } finally {
+      syncInFlightRef.current = false;
+      if (syncQueuedRef.current) {
+        syncQueuedRef.current = false;
+        setTimeout(() => flushSyncRef.current(), 0);
+      }
+    }
   };
-  const runSyncRef = React.useRef(runSync);
-  runSyncRef.current = runSync;
+  performSyncRef.current = performSync;
+
+  const flushScheduledSync = (force = false) => {
+    clearScheduledSyncTimers();
+    if (!syncDirtyRef.current && !force) return;
+    void performSyncRef.current();
+  };
+  flushSyncRef.current = flushScheduledSync;
+
+  const scheduleContentSync = () => {
+    markSyncDirty();
+
+    // A content flush also includes the latest stats, so a separate stats
+    // timer would only create a redundant follow-up request.
+    if (statsSyncTimerRef.current) {
+      clearTimeout(statsSyncTimerRef.current);
+      statsSyncTimerRef.current = null;
+    }
+
+    if (syncIdleTimerRef.current) clearTimeout(syncIdleTimerRef.current);
+    syncIdleTimerRef.current = setTimeout(() => flushSyncRef.current(), CONTENT_SYNC_IDLE_MS);
+    if (!syncMaxTimerRef.current) {
+      syncMaxTimerRef.current = setTimeout(() => flushSyncRef.current(), CONTENT_SYNC_MAX_WAIT_MS);
+    }
+  };
+  scheduleContentSyncRef.current = scheduleContentSync;
+
+  const scheduleStatsSync = () => {
+    markSyncDirty();
+    if (syncIdleTimerRef.current || syncMaxTimerRef.current || statsSyncTimerRef.current) return;
+    statsSyncTimerRef.current = setTimeout(() => flushSyncRef.current(), STATS_SYNC_INTERVAL_MS);
+  };
+  scheduleStatsSyncRef.current = scheduleStatsSync;
+
+  const retrySync = () => {
+    markSyncDirty();
+    flushSyncRef.current(true);
+  };
 
   // Persistence & Source Sync
   useEffect(() => {
@@ -303,48 +388,24 @@ const App: React.FC = () => {
     localStorage.setItem('nav_sections_v1', JSON.stringify(sections));
     window.dispatchEvent(new CustomEvent('nav_sections_updated', { detail: sections }));
 
-    // 2. Debounced Cloud Sync (2 Seconds) — only after explicit user authorization.
-    //    NOTE: stats intentionally NOT in the dependency array — click stats sync
-    //    at a lower frequency via the 30s flush below (fixes "always 0 秒前").
-    if (syncSettings.enabled && isInitialLoaded && syncAuthorized) {
-      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-      syncTimerRef.current = setTimeout(runSync, 2000);
+    const sectionsChanged = previousSectionsRef.current !== sections;
+    previousSectionsRef.current = sections;
+    if (!sectionsChanged || !isInitialLoaded) return;
+
+    if (isLocalRuntime() || (syncSettings.enabled && syncAuthorized)) {
+      scheduleContentSyncRef.current();
     }
+  }, [sections, isInitialLoaded, syncSettings.enabled, syncAuthorized]);
 
-    return () => {
-      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-    };
-  }, [sections, syncSettings, syncAuthorized]);
-
-  // 3. Click-stats flush: throttled to 30s — the FIRST stats change schedules a
-  //    flush, further clicks within the window do NOT reset it. Guarded by the
-  //    same authorization as the debounced save: an unauthorized session must
-  //    NEVER push local data over the remote. NOTE: cleanup must NOT clear the
-  //    timer — React runs cleanup on every stats change (setStats new object),
-  //    which would turn this back into a never-firing trailing debounce.
-  const statsFlushRef = React.useRef<any>(null);
-  const statsFlushPendingRef = React.useRef(false);
+  // Click statistics are deliberately low-frequency. They join an already
+  // pending content upload, otherwise they flush at most once every 30 minutes.
   useEffect(() => {
-    if (!(syncSettings.enabled && syncAuthorized)) {
-      // Authorization lost (or never granted): cancel any scheduled flush.
-      if (statsFlushRef.current) clearTimeout(statsFlushRef.current);
-      statsFlushPendingRef.current = false;
-      return;
+    const statsChanged = previousStatsRef.current !== stats;
+    previousStatsRef.current = stats;
+    if (statsChanged && isInitialLoaded && syncSettings.enabled && syncAuthorized && !isLocalRuntime()) {
+      scheduleStatsSyncRef.current();
     }
-    if (!statsFlushPendingRef.current) {
-      statsFlushPendingRef.current = true;
-      statsFlushRef.current = setTimeout(() => {
-        statsFlushPendingRef.current = false;
-        runSyncRef.current();
-      }, 30000);
-    }
-  }, [stats, syncSettings.enabled, syncAuthorized]);
-
-  // Unmount-only cleanup (independent of stats changes).
-  useEffect(() => () => {
-    if (statsFlushRef.current) clearTimeout(statsFlushRef.current);
-    statsFlushPendingRef.current = false;
-  }, []);
+  }, [stats, isInitialLoaded, syncSettings.enabled, syncAuthorized]);
 
   // Initial Remote Data Sync
   useEffect(() => {
@@ -370,23 +431,36 @@ const App: React.FC = () => {
     initRemoteData();
   }, []); // Run once on mount
 
-  // Listen for Header updates to trigger total source sync
+  // Search category/engine edits join the same batched content scheduler.
   useEffect(() => {
     const handleHeaderUpdate = () => {
-      const categoriesJson = localStorage.getItem('nav_search_categories_v2');
-      if (categoriesJson) {
-        const categories = JSON.parse(categoriesJson);
-        const sourceCode = serializeConstants(sections, categories);
-        // Local mode (enabled=false) always saves; cloud upload requires authorization.
-        if (!syncSettings.enabled || syncAuthorized) {
-          setSyncStatus('syncing');
-          saveToSource(sourceCode, syncSettings, sections, categories, stats).then(updateSyncState);
-        }
+      if (isLocalRuntime() || (syncSettings.enabled && syncAuthorized)) {
+        scheduleContentSyncRef.current();
       }
     };
     window.addEventListener('nav_search_updated', handleHeaderUpdate);
     return () => window.removeEventListener('nav_search_updated', handleHeaderUpdate);
-  }, [sections, syncSettings, syncAuthorized, stats]);
+  }, [syncSettings.enabled, syncAuthorized]);
+
+  // If a tab closes before its timer fires, retain a durable dirty marker and
+  // retry next time. pagehide also makes a best-effort immediate flush.
+  useEffect(() => {
+    if (isInitialLoaded && (isLocalRuntime() || (syncSettings.enabled && syncAuthorized)) && localStorage.getItem(SYNC_DIRTY_KEY) === '1') {
+      syncDirtyRef.current = true;
+      scheduleContentSyncRef.current();
+    }
+  }, [isInitialLoaded, syncSettings.enabled, syncAuthorized]);
+
+  useEffect(() => {
+    const handlePageHide = () => {
+      if (syncDirtyRef.current) flushSyncRef.current();
+    };
+    window.addEventListener('pagehide', handlePageHide);
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide);
+      clearScheduledSyncTimers();
+    };
+  }, []);
 
   // Click outside listener for context menu
   useEffect(() => {
@@ -1142,6 +1216,7 @@ const App: React.FC = () => {
         onSettingsChange={setSyncSettings}
         onPullRemote={handlePullRemote}
         onKeepLocal={handleKeepLocal}
+        onSyncNow={retrySync}
         syncAuthorized={syncAuthorized}
       />
 

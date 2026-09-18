@@ -129,6 +129,7 @@ const MobileApp: React.FC<MobileAppProps> = ({
                     onSettingsChange={setSyncSettings}
                     onPullRemote={onPullRemote}
                     onKeepLocal={onKeepLocal}
+                    onSyncNow={onRetrySync}
                     syncAuthorized={syncAuthorized}
                     isMobile
                 />,

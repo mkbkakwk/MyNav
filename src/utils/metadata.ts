@@ -23,35 +23,37 @@ export interface WebsiteMetadata {
 // Cache layer (persistent)
 // ---------------------------------------------------------------------------
 
-// `partial` is retained in the type only to migrate cache entries written by
-// older versions. New versions never create partial entries.
 interface CacheEntry {
     data: WebsiteMetadata;
     timestamp: number;
-    quality: 'full' | 'partial';
+    quality: 'full';
 }
 
 const metadataCache = new Map<string, CacheEntry>();
-const CACHE_KEY = 'nav_metadata_cache_v1';
+const CACHE_KEY = 'nav_metadata_cache_v2';
+const LEGACY_CACHE_KEYS = ['nav_metadata_cache_v1'];
 const FULL_TTL = 7 * 24 * 60 * 60 * 1000;   // 7 days
 
 // Load persisted cache once at startup.
 try {
+    // v1 could contain icon-only entries that the UI correctly considered a
+    // metadata failure. Drop the entire legacy cache once so an upgraded app
+    // retries every affected URL without requiring a manual console command.
+    LEGACY_CACHE_KEYS.forEach(key => localStorage.removeItem(key));
+
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) {
         const parsed = JSON.parse(raw) as Record<string, CacheEntry>;
-        let removedLegacyPartial = false;
+        let removedInvalidEntry = false;
         Object.entries(parsed).forEach(([url, entry]) => {
-            if (entry.quality === 'full') {
+            if (entry.quality === 'full' && (entry.data?.title || entry.data?.description)) {
                 metadataCache.set(url, entry);
             } else {
-                removedLegacyPartial = true;
+                removedInvalidEntry = true;
             }
         });
 
-        // Remove icon-only entries created by older versions immediately so
-        // users do not have to wait for their old one-hour TTL to expire.
-        if (removedLegacyPartial) {
+        if (removedInvalidEntry) {
             const fullEntries = Object.fromEntries(metadataCache.entries());
             localStorage.setItem(CACHE_KEY, JSON.stringify(fullEntries));
         }
@@ -74,7 +76,7 @@ const persistCache = () => {
 const getCached = (url: string): CacheEntry | null => {
     const cached = metadataCache.get(url);
     if (!cached) return null;
-    if (cached.quality !== 'full' || Date.now() - cached.timestamp >= FULL_TTL) {
+    if (Date.now() - cached.timestamp >= FULL_TTL) {
         metadataCache.delete(url);
         persistCache();
         return null;

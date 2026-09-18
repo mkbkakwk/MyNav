@@ -45,6 +45,7 @@ export const serializeToJson = (sections: SectionData[], categories: Category[],
 export interface SyncResult {
     ok: boolean;
     error?: string;
+    skipped?: boolean;
 }
 
 /**
@@ -85,14 +86,23 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
             };
 
             const jsonData = serializeToJson(sections, categories, stats);
+            const encodedContent = btoa(unescape(encodeURIComponent(jsonData)));
 
-            // 1. Force fetch the LATEST SHA every time to prevent Mismatch errors
+            // 1. Fetch the latest SHA and content. Besides preventing SHA
+            // mismatches, this lets us skip no-op commits entirely.
             let latestSha = '';
             try {
                 const getFileResponse = await fetch(apiUrl, { headers });
                 if (getFileResponse.status === 200) {
                     const latestFileData = await getFileResponse.json();
                     latestSha = latestFileData.sha;
+                    const remoteContent = typeof latestFileData.content === 'string'
+                        ? latestFileData.content.replace(/\s/g, '')
+                        : '';
+                    if (remoteContent === encodedContent) {
+                        console.log('Cloud data is unchanged; skipped GitHub commit');
+                        return { ok: true, skipped: true };
+                    }
                 }
             } catch (e: any) {
                 console.warn('Failed to fetch latest SHA, will attempt without it:', e.message);
@@ -104,7 +114,7 @@ export const saveToSource = async (content: string, settings?: SyncSettings, sec
                 headers,
                 body: JSON.stringify({
                     message: 'update(nav): robust cloud sync update',
-                    content: btoa(unescape(encodeURIComponent(jsonData))),
+                    content: encodedContent,
                     sha: latestSha || undefined // Always use the most recent fingerprint
                 })
             });
